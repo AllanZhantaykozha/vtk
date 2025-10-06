@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "public"."Test" ALTER COLUMN "uploadDate" SET DEFAULT CURRENT_TIMESTAMP;

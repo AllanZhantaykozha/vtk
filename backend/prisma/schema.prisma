@@ -1,0 +1,164 @@
+// Define the database provider
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Generator for Prisma Client
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model to store common user fields
+model User {
+  id        Int      @id @default(autoincrement())
+  login     String   @unique // Unique identifier for user login
+  password  String // Should be hashed in application logic
+  fullName  String // Changed from fullName for consistency
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher Teacher? @relation("UserToTeacher")
+  student Student? @relation("UserToStudent")
+  admin   Admin?   @relation("UserToAdmin")
+}
+
+// Teacher model for users who create tests and lectures
+model Teacher {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation("UserToTeacher", fields: [userId], references: [id], onDelete: Cascade)
+
+  subjects TeacherSubject[] @relation("TeacherSubjects")
+  tests    Test[]           @relation("TeacherTests")
+  lectures Lecture[]        @relation("TeacherLectures")
+}
+
+// Student model for users who take tests
+model Student {
+  id          Int              @id @default(autoincrement())
+  userId      Int              @unique
+  groupId     Int? // Nullable to allow students without a group
+  group       Group?           @relation("GroupStudents", fields: [groupId], references: [id], onDelete: SetNull)
+  user        User             @relation("UserToStudent", fields: [userId], references: [id], onDelete: Cascade)
+  submissions TestSubmission[] @relation("StudentSubmissions")
+}
+
+// Admin model for users with administrative privileges
+model Admin {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation("UserToAdmin", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Subject model to store subject details
+model Subject {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  groups   GroupSubject[]   @relation("GroupSubjects")
+  teachers TeacherSubject[] @relation("TeacherSubjects")
+  tests    Test[]           @relation("TestSubject")
+  lectures Lecture[]        @relation("LectureSubject")
+
+  @@index([name]) // Added index for frequent queries
+}
+
+// Group model to store group details
+model Group {
+  id       Int            @id @default(autoincrement())
+  name     String         @unique
+  subjects GroupSubject[] @relation("GroupSubjects")
+  students Student[]      @relation("GroupStudents")
+}
+
+// Many-to-many relation between Group and Subject
+model GroupSubject {
+  groupId   Int
+  subjectId Int
+  group     Group   @relation("GroupSubjects", fields: [groupId], references: [id], onDelete: Cascade)
+  subject   Subject @relation("GroupSubjects", fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@id([groupId, subjectId])
+  @@index([subjectId]) // Added index for performance
+}
+
+// Many-to-many relation between Teacher and Subject
+model TeacherSubject {
+  teacherId Int
+  subjectId Int
+  teacher   Teacher @relation("TeacherSubjects", fields: [teacherId], references: [id], onDelete: Cascade)
+  subject   Subject @relation("TeacherSubjects", fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@id([teacherId, subjectId])
+  @@index([subjectId]) // Added index for performance
+}
+
+// Test model for storing test metadata
+model Test {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String?
+  subjectId   Int
+  subject     Subject          @relation("TestSubject", fields: [subjectId], references: [id], onDelete: Restrict)
+  teacherId   Int
+  teacher     Teacher          @relation("TeacherTests", fields: [teacherId], references: [id], onDelete: Cascade)
+  uploadDate  DateTime         @default(now())
+  questions   Question[]       @relation("TestQuestions")
+  submissions TestSubmission[] @relation("TestSubmissions")
+
+  @@index([subjectId, teacherId]) // Added index for frequent queries
+}
+
+// Question model for test questions
+model Question {
+  id      Int      @id @default(autoincrement())
+  testId  Int
+  test    Test     @relation("TestQuestions", fields: [testId], references: [id], onDelete: Cascade)
+  text    String
+  image   String? // Optional image URL or path
+  type    String   @default("single") // Enum: "single" or "multiple"
+  options Option[] @relation("QuestionOptions")
+  correct Int[] // Array of Option IDs for correct answers
+
+  @@index([testId]) // Added index for performance
+}
+
+// Option model for question options
+model Option {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+
+  @@index([questionId]) // Added index for performance
+}
+
+// TestSubmission model for student test submissions
+model TestSubmission {
+  id          Int      @id @default(autoincrement())
+  testId      Int
+  test        Test     @relation("TestSubmissions", fields: [testId], references: [id], onDelete: Cascade)
+  studentId   Int
+  student     Student  @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  answers     Json // Stores student answers as JSON (e.g., { questionId: [optionIds] })
+  score       Int
+  submittedAt DateTime @default(now())
+
+  @@index([testId, studentId]) // Added index for frequent queries
+}
+
+// Lecture model for storing lecture metadata and content
+model Lecture {
+  id          Int      @id @default(autoincrement())
+  title       String
+  subjectId   Int
+  subject     Subject  @relation("LectureSubject", fields: [subjectId], references: [id], onDelete: Restrict)
+  teacherId   Int // Changed from instructorId for consistency
+  teacher     Teacher  @relation("TeacherLectures", fields: [teacherId], references: [id], onDelete: Cascade) // Changed from instructor
+  description String
+  uploadDate  DateTime @default(now())
+  fileContent Bytes // Binary content (e.g., PDF); consider external storage for large files
+
+  @@index([subjectId, teacherId]) // Added index for performance
+}
