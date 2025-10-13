@@ -17,6 +17,10 @@ export interface Submission {
   id: number;
   testId: number;
   studentId: number;
+  student: {
+    userId: number;
+  };
+  status: TestSubmissionStatus;
   answers: Record<string, number[]>;
   score: number;
   submittedAt: string;
@@ -42,4 +46,10 @@ export interface ITransformedTest {
   teacher: { user: { fullName: string } };
   questions: Question[];
   submissions: Submission[];
+}
+
+export enum TestSubmissionStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
 }

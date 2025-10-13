@@ -7,65 +7,14 @@ import {
 import { User } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 import { CreateGroupDto, UpdateGroupDto } from './dto/group.dto';
-import { CreateSubjectDto, UpdateSubjectDto } from './dto/subjects.dto';
+import {
+  CreateSubjectDto,
+  UpdateSubjectDto,
+} from '../subjects/dto/subjects.dto';
 
 @Injectable()
 export class GroupsService {
   constructor(private prisma: PrismaService) {}
-
-  // ---------- SUBJECTS ----------
-
-  async createSubject(dto: CreateSubjectDto, user: User & { role: string }) {
-    if (user.role !== 'admin') {
-      throw new ForbiddenException('Only admins can create subjects');
-    }
-
-    const existingSubject = await this.prisma.subject.findUnique({
-      where: { name: dto.name },
-    });
-    if (existingSubject) {
-      throw new BadRequestException(
-        `Subject with name ${dto.name} already exists`,
-      );
-    }
-
-    return this.prisma.subject.create({
-      data: { name: dto.name },
-    });
-  }
-
-  async updateSubject(
-    id: number,
-    dto: UpdateSubjectDto,
-    user: User & { role: string },
-  ) {
-    if (user.role !== 'admin') {
-      throw new ForbiddenException('Only admins can update subjects');
-    }
-
-    const existing = await this.prisma.subject.findUnique({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException(`Subject with ID ${id} not found`);
-    }
-
-    return this.prisma.subject.update({
-      where: { id },
-      data: { name: dto.name },
-    });
-  }
-
-  async deleteSubject(id: number, user: User & { role: string }) {
-    if (user.role !== 'admin') {
-      throw new ForbiddenException('Only admins can delete subjects');
-    }
-
-    const existing = await this.prisma.subject.findUnique({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException(`Subject with ID ${id} not found`);
-    }
-
-    return this.prisma.subject.delete({ where: { id } });
-  }
 
   // ---------- GROUPS ----------
 

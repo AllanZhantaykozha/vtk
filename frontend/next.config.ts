@@ -1,9 +1,8 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
-    domains: ["picsum.photos"],
+    domains: ["localhost"], // разрешить загрузку с localhost
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

@@ -10,22 +10,46 @@ import {
   Query,
   Patch,
   Delete,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import { TestsService } from './tests.service';
 import { CreateTestDto, SubmitTestDto, UpdateTestDto } from './dto/tests.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { extname } from 'path';
+import { diskStorage } from 'multer';
 
 @Controller('tests')
 export class TestsController {
   constructor(private testsService: TestsService) {}
 
   @Post()
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: './uploads/questions',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(
+            null,
+            `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`,
+          );
+        },
+      }),
+    }),
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
-  async create(@Body() createTestDto: CreateTestDto, @Request() req) {
-    return this.testsService.createTest(createTestDto, req.user);
+  async create(
+    @Body() createTestDto: CreateTestDto,
+    @Request() req,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.testsService.createTest(createTestDto, req.user, files);
   }
 
   @Patch(':id')
@@ -46,27 +70,8 @@ export class TestsController {
     return this.testsService.deleteTest(id, req.user);
   }
 
-  @Get()
+  @Get('')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('student', 'teacher', 'admin')
-  async getTests(
-    @Request() req,
-    @Query('subject') subject?: string,
-    @Query('title') title?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    return this.testsService.getTests(req.user, {
-      subject,
-      title,
-      startDate,
-      endDate,
-    });
-  }
-
-  @Get('my-tests')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('student')
   async getMyTests(
     @Request() req,
     @Query('subject') subject?: string,
@@ -98,6 +103,17 @@ export class TestsController {
     @Request() req,
   ) {
     return this.testsService.submitTest(id, submitTestDto, req.user);
+  }
+
+  @Post('submissions/:id/check')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  async updateSubmissionStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: 'APPROVED' | 'REJECTED' },
+    @Request() req,
+  ) {
+    return this.testsService.updateSubmissionStatus(id, body.status, req.user);
   }
 }
 

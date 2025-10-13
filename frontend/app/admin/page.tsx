@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -54,7 +54,6 @@ export default function AdminPage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupSubjects, setNewGroupSubjects] = useState<number[]>([]);
 
-  const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [editUserId, setEditUserId] = useState<number | null>(null);
@@ -90,7 +89,7 @@ export default function AdminPage() {
     return res.json();
   };
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     try {
       const [subjData, groupData, userData] = await Promise.all([
         fetchWithToken("http://localhost:4000/subjects"),
@@ -100,10 +99,14 @@ export default function AdminPage() {
       setSubjects(subjData);
       setGroups(groupData);
       setUsers(userData);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) setError(err.message);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (ready && token) fetchAll();
+  }, [ready, token, fetchAll]);
 
   useEffect(() => {
     if (ready && token) fetchAll();
@@ -205,7 +208,7 @@ export default function AdminPage() {
     try {
       if (editSubjectId) {
         await fetchWithToken(
-          `http://localhost:4000/groups/subjects/${editSubjectId}`,
+          `http://localhost:4000/subjects/${editSubjectId}`,
           {
             method: "PATCH",
             body: JSON.stringify(body),
@@ -213,7 +216,7 @@ export default function AdminPage() {
         );
         setEditSubjectId(null);
       } else {
-        await fetchWithToken("http://localhost:4000/groups/subjects", {
+        await fetchWithToken("http://localhost:4000/subjects", {
           method: "POST",
           body: JSON.stringify(body),
         });

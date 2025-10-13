@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import * as XLSX from "xlsx";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -19,11 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { TestSubmissionStatus } from "@/components/types/test.type";
+import { useApi } from "@/hooks/useApi";
 
 type PassedTest = {
   id: number;
   score: number;
   submittedAt: string;
+  status: TestSubmissionStatus;
   student: {
     id: number;
     group: { id: number; name: string } | null;
@@ -37,11 +42,24 @@ type PassedTest = {
   };
 };
 
+const writeStatus = (status: "PENDING" | "APPROVED" | "REJECTED") => {
+  if (status === "PENDING") {
+    return "Ожидание проверки";
+  } else if (status === "APPROVED") {
+    return "Тест пройден";
+  } else if (status === "REJECTED") {
+    return "Пройти заново";
+  } else {
+    return "Неизвестный статус";
+  }
+};
+
 export default function PassedTestsPage() {
   const [tests, setTests] = useState<PassedTest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedGroup, setSelectedGroup] = useState<string>("");
+  const [check, setCheck] = useState<boolean>(false);
 
   const router = useRouter();
 
@@ -67,7 +85,7 @@ export default function PassedTestsPage() {
     }
 
     fetchData();
-  }, [router]);
+  }, [router, check]);
 
   // Уникальные предметы
   const subjects = useMemo(() => {
@@ -90,15 +108,108 @@ export default function PassedTestsPage() {
   }, [tests]);
 
   // Фильтрация
+  // Фильтрация + выбор последней попытки + сортировка
   const filteredTests = useMemo(() => {
-    return tests.filter((t) => {
+    // Сначала фильтруем по предмету и группе
+    const filtered = tests.filter((t) => {
       const subjectMatch =
         !selectedSubject || t.test.subject.id.toString() === selectedSubject;
       const groupMatch =
         !selectedGroup || t.student.group?.id.toString() === selectedGroup;
       return subjectMatch && groupMatch;
     });
+
+    // Сортируем по дате (новые сверху)
+    const sorted = [...filtered].sort(
+      (a, b) =>
+        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    );
+
+    // Убираем дубликаты (оставляем только самую новую попытку)
+    const uniqueMap = new Map<string, PassedTest>();
+    for (const test of sorted) {
+      const key = `${test.test.id}-${test.student.user.id}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, test);
+      }
+    }
+
+    return Array.from(uniqueMap.values());
   }, [tests, selectedSubject, selectedGroup]);
+
+  const { refetch } = useApi("tests", "check", {
+    enabled: false,
+  });
+
+  const handleCheck = async (id: number, status: TestSubmissionStatus) => {
+    await refetch({
+      params: { id: String(id) },
+      body: { status },
+    });
+
+    setCheck(!check);
+  };
+
+  const handleXlsx = () => {
+    const output = filteredTests.map((submission) => {
+      const { id, score, status, submittedAt, student, test } = submission;
+      const numQuestions = test.questions.length;
+      const percentage = Math.round((score / numQuestions) * 100) + "%";
+      const statusRu =
+        status === "APPROVED"
+          ? "Одобренный"
+          : status === "REJECTED"
+          ? "Отклоненный"
+          : "Ожидание проверки";
+      const dateTime = new Date(submittedAt);
+      const date = dateTime.toISOString().split("T")[0];
+      const time = dateTime.toTimeString().split(" ")[0].slice(0, 8);
+      const fullName = student.user.fullName;
+      const testTitle = test.title;
+      const subject = test.subject.name;
+
+      return {
+        "№": id,
+        Оценка: percentage,
+        Статус: statusRu,
+        "Дата прохождение": date,
+        "Время прохождение": time,
+        "ФИО студента": fullName,
+        "Название теста": testTitle,
+        Предмет: subject,
+      };
+    });
+
+    // 1. Создайте рабочий лист из данных JSON
+    const worksheet = XLSX.utils.json_to_sheet(output);
+
+    // 2. Создайте новую рабочую книгу
+    const workbook = XLSX.utils.book_new();
+
+    // 3. Добавьте рабочий лист в рабочую книгу
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    // 4. Сгенерируйте файл XLSX (байтовый массив)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    // 5. Сформируйте Blob из байтового массива
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+
+    // 6. Создайте URL для скачивания файла (для браузера)
+    const url = URL.createObjectURL(blob);
+
+    // 7. Создайте ссылку для скачивания и имитируйте клик
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${Date.now()}_tests_results.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Освободите URL объекта
+  };
 
   return (
     <div className="container mx-auto p-6">
@@ -142,6 +253,8 @@ export default function PassedTestsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+
+                <Button onClick={handleXlsx}>Выгрузить в Excel документ</Button>
               </div>
 
               {/* Таблица */}
@@ -169,10 +282,31 @@ export default function PassedTestsPage() {
                         <TableCell>{t.student.user.fullName}</TableCell>
                         <TableCell>{t.student.group?.name || "—"}</TableCell>
                         <TableCell>
-                          {t.score} / {t.test.questions.length}
+                          {Math.round(
+                            (t.score / t.test.questions.length) * 100
+                          ) + "%"}
                         </TableCell>
                         <TableCell>
                           {new Date(t.submittedAt).toLocaleString("ru-RU")}
+                        </TableCell>
+                        <TableCell>{writeStatus(t.status)}</TableCell>
+                        <TableCell>
+                          <Button
+                            onClick={() =>
+                              handleCheck(t.id, TestSubmissionStatus.REJECTED)
+                            }
+                          >
+                            Повторное прохождение
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            onClick={() =>
+                              handleCheck(t.id, TestSubmissionStatus.APPROVED)
+                            }
+                          >
+                            Утвердить
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

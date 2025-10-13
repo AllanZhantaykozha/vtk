@@ -9,8 +9,27 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { StudentModule } from './student/student.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationModule } from './notification/notification.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, LecturesModule, TestsModule, GroupsModule, SubjectsModule, TeacherModule, StudentModule, AdminModule],
+  imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    LecturesModule,
+    TestsModule,
+    GroupsModule,
+    SubjectsModule,
+    TeacherModule,
+    StudentModule,
+    AdminModule,
+    NotificationModule,
+  ],
 })
 export class AppModule {}

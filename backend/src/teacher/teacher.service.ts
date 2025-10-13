@@ -283,6 +283,7 @@ export class TeacherService {
       select: {
         id: true,
         score: true,
+        status: true,
         submittedAt: true,
         student: {
           select: {
@@ -305,6 +306,7 @@ export class TeacherService {
           select: {
             id: true,
             title: true,
+
             subject: {
               select: {
                 id: true,

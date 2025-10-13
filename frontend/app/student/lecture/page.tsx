@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useDebounce } from "use-debounce";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,7 +21,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Lecture } from "@/components/types/lecture.type";
-import { Subject } from "@/components/types/subject.type";
 import { useApi } from "@/hooks/useApi";
 import { Loading } from "@/components/ux/loading";
 import { Error } from "@/components/ux/error";

@@ -71,7 +71,7 @@ export default function LecturePage() {
             subject: { id: lecture.subject.id, name: lecture.subject.name },
             uploadDate: lecture.uploadDate,
             fileContent: lecture.fileContent,
-            instructor: lecture.instructor, // оставляем как есть с бэка
+            teacher: lecture.teacher, // оставляем как есть с бэка
           })
         );
 
@@ -299,7 +299,7 @@ export default function LecturePage() {
                 </p>
                 <p className="text-gray-500 text-sm">
                   <span className="font-medium">Преподаватель:</span>{" "}
-                  {lecture.instructor?.user?.fullName || "Не указан"}
+                  {lecture.teacher?.user?.fullName || "Не указан"}
                 </p>
                 <p className="text-gray-500 text-sm mb-4">
                   <span className="font-medium">Дата:</span>{" "}

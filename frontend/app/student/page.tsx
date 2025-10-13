@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { Submission } from "@/components/types/test.type";
 
 interface Subject {
   id: number;
@@ -45,6 +46,8 @@ interface TestData {
   title: string;
   score: number;
   date: string;
+  grade: number;
+  total: number;
 }
 
 interface LessonData {
@@ -55,11 +58,7 @@ interface LessonData {
 interface Test {
   id: number;
   title: string;
-  submissions: Array<{
-    id: number;
-    score: number;
-    submittedAt: string;
-  }>;
+  submissions: Submission[];
 }
 
 export default function StudentPage() {
@@ -69,6 +68,7 @@ export default function StudentPage() {
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [grade, setGrade] = useState<number | null>(null);
 
   const fetchData = async () => {
     try {
@@ -93,27 +93,32 @@ export default function StudentPage() {
         setLessons(lessonsList);
       }
 
-      const testsResponse = await fetch(
-        "http://localhost:4000/tests/my-tests",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const testsResponse = await fetch("http://localhost:4000/tests", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!testsResponse.ok) throw new Error("Ошибка при загрузке тестов");
       const testsData: Test[] = await testsResponse.json();
 
+      console.log(testsData);
+
       const transformedTestData: TestData[] = testsData
-        .flatMap((test) =>
-          test.submissions.map((s) => ({
+        .flatMap((test: Test) =>
+          test.submissions.map((s: Submission) => ({
             id: test.id,
             title: test.title,
             score: s.score,
+            total: Object.keys(s.answers).length,
+            grade: Math.round(
+              (Number(s.score) / Number(Object.keys(s.answers).length)) * 100
+            ),
             date: new Date(s.submittedAt).toISOString().split("T")[0],
           }))
         )
         .sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
+
+      console.log(transformedTestData);
 
       setTestData(transformedTestData);
       setLoading(false);
@@ -227,7 +232,7 @@ export default function StudentPage() {
                 <tr className="bg-gray-100 sticky top-0">
                   <th className="border p-3 text-left">Название</th>
                   <th className="border p-3 text-left">Дата</th>
-                  <th className="border p-3 text-left">Баллы</th>
+                  <th className="border p-3 text-left">Оценка</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,7 +243,7 @@ export default function StudentPage() {
                   >
                     <td className="border p-3">{test.title}</td>
                     <td className="border p-3">{test.date}</td>
-                    <td className="border p-3">{test.score}</td>
+                    <td className="border p-3">{test.grade}%</td>
                   </tr>
                 ))}
               </tbody>

@@ -47,6 +47,7 @@ export default function TestPage() {
           throw new Error("Ошибка при загрузке теста");
         }
         const data: Test = await response.json();
+
         setTest(data);
         setLoading(false);
       } catch (err: any) {
@@ -62,6 +63,8 @@ export default function TestPage() {
 
     fetchTest();
   }, [id, router]);
+
+  console.log(test);
 
   // Handle single-choice selection
   const handleSingle = (questionId: number, optionId: number) => {

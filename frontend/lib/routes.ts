@@ -31,6 +31,7 @@ export const ROUTES = {
     getById: { path: `/tests/{id}`, method: "GET" },
     getMyTests: { path: `/tests/my-tests`, method: "GET" },
     submit: { path: `/tests/{id}/submit`, method: "POST" },
+    check: { path: `/tests/submissions/{id}/check`, method: "POST" },
   },
   groups: {
     addSubject: { path: `/groups/subjects`, method: "POST" },
@@ -73,6 +74,9 @@ export const ROUTES = {
   },
   student: {
     getMySubjects: { path: `/student/my-subjects`, method: "GET" },
+  },
+  notification: {
+    getNotification: { path: `/notification`, method: "GET" },
   },
 } as const satisfies Record<string, Record<string, RouteConfig>>;
 

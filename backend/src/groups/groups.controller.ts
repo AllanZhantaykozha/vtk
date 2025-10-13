@@ -14,7 +14,10 @@ import {
 import { GroupsService } from './groups.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateGroupDto, UpdateGroupDto } from './dto/group.dto';
-import { CreateSubjectDto, UpdateSubjectDto } from './dto/subjects.dto';
+import {
+  CreateSubjectDto,
+  UpdateSubjectDto,
+} from '../subjects/dto/subjects.dto';
 import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
 
@@ -22,33 +25,6 @@ import { RolesGuard } from 'src/auth/roles.guard';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class GroupsController {
   constructor(private groupsService: GroupsService) {}
-
-  // ---------- SUBJECTS ----------
-
-  @Roles('admin')
-  @Post('subjects')
-  async createSubject(
-    @Body() createSubjectDto: CreateSubjectDto,
-    @Request() req,
-  ) {
-    return this.groupsService.createSubject(createSubjectDto, req.user);
-  }
-
-  @Roles('admin')
-  @Patch('subjects/:id')
-  async updateSubject(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateSubjectDto: UpdateSubjectDto,
-    @Request() req,
-  ) {
-    return this.groupsService.updateSubject(id, updateSubjectDto, req.user);
-  }
-
-  @Roles('admin')
-  @Delete('subjects/:id')
-  async deleteSubject(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    return this.groupsService.deleteSubject(id, req.user);
-  }
 
   // ---------- GROUPS ----------
 

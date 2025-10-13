@@ -15,7 +15,6 @@ export class UsersService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   async onModuleInit() {
-    // Create default admin user if it doesn't exist
     const adminLogin = 'admin@example.com';
     const adminPassword = 'Admin123!';
     const existingAdmin = await this.prisma.user.findUnique({

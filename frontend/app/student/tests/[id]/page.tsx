@@ -15,7 +15,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Test } from "@/components/types/test.type";
+import { Test, TestSubmissionStatus } from "@/components/types/test.type";
 
 export default function TestPage() {
   const { id } = useParams();
@@ -47,6 +47,13 @@ export default function TestPage() {
           throw new Error("Ошибка при загрузке теста");
         }
         const data: Test = await response.json();
+
+        const guard = data.submissions.some(
+          (s) => s.status === "PENDING" || "APPROVED"
+        );
+
+        if (guard) router.push("/student/tests");
+
         setTest(data);
         setLoading(false);
       } catch (err: any) {
@@ -62,6 +69,8 @@ export default function TestPage() {
 
     fetchTest();
   }, [id, router]);
+
+  console.log(test);
 
   // Handle single-choice selection (индекс)
   const handleSingle = (questionId: number, optionIndex: number) => {
@@ -183,7 +192,7 @@ export default function TestPage() {
                   {q.image && (
                     <div className="mb-4">
                       <Image
-                        src={q.image}
+                        src={`http:localhost:4000${q.image}`}
                         alt="question"
                         width={400}
                         height={300}
@@ -249,7 +258,14 @@ export default function TestPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setIsDialogOpen(false)}>Закрыть</Button>
+              <Button
+                onClick={() => {
+                  setIsDialogOpen(false);
+                  router.push("/student/tests");
+                }}
+              >
+                Закрыть
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

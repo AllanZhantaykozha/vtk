@@ -40,19 +40,22 @@ type Subject = {
 };
 
 export default function CreateTestPage() {
+  const [currentQuestion, setCurrentQuestion] = useState<
+    Partial<Question> & { file?: File }
+  >({
+    text: "",
+    type: "single",
+    options: [{ id: 1, text: "" }],
+    correct: [],
+    file: undefined,
+  });
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [test, setTest] = useState<Test>({
     title: "",
     description: "",
     subjectId: 0,
     questions: [],
-  });
-
-  const [currentQuestion, setCurrentQuestion] = useState<Partial<Question>>({
-    text: "",
-    type: "single",
-    options: [{ id: 1, text: "" }],
-    correct: [],
   });
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function CreateTestPage() {
       ...prev,
       options: prev.options?.filter((opt) => opt.id !== optionId),
       correct: prev.correct?.filter((id) => id !== optionId),
+      file: undefined,
     }));
   };
 
@@ -129,9 +133,11 @@ export default function CreateTestPage() {
           id: prev.questions.length + 1,
           options: currentQuestion.options || [],
           correct: currentQuestion.correct || [],
-        } as Question,
+          file: currentQuestion.file,
+        } as Question & { file?: File },
       ],
     }));
+
     setCurrentQuestion({
       text: "",
       type: "single",
@@ -153,28 +159,23 @@ export default function CreateTestPage() {
       return;
     }
 
-    const payload = {
-      title: test.title,
-      description: test.description,
-      subjectId: test.subjectId,
-      questions: test.questions.map((q) => {
-        const options = q.options.map((opt) => ({
-          id: opt.id,
-          text: opt.text,
-        }));
+    const formData = new FormData();
 
-        const correct = q.correct.map((id) =>
-          options.findIndex((opt) => opt.id === id)
-        );
+    // Текстовая часть
+    formData.append("title", test.title);
+    formData.append("description", test.description || "");
+    formData.append("subjectId", String(test.subjectId));
 
-        return {
-          text: q.text,
-          type: q.type,
-          options,
-          correct,
-        };
-      }),
-    };
+    // Сериализуем вопросы, но без файлов
+    const questions = test.questions.map(({ file, ...rest }) => rest);
+    formData.append("questions", JSON.stringify(questions));
+
+    // Прикрепляем файлы
+    test.questions.forEach((q, index) => {
+      if (q.file) {
+        formData.append(`question_${index}`, q.file);
+      }
+    });
 
     try {
       const token = localStorage.getItem("token");
@@ -182,13 +183,10 @@ export default function CreateTestPage() {
       const response = await fetch("http://localhost:4000/tests", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
-
-      console.log("Отправка:", JSON.stringify(payload, null, 2));
 
       if (!response.ok) {
         const err = await response.json();
@@ -196,7 +194,7 @@ export default function CreateTestPage() {
         throw new Error(err.message || "Ошибка при создании теста");
       }
 
-      alert("Тест успешно сохранен на сервере!");
+      alert("Тест успешно сохранён!");
       setTest({
         title: "",
         description: "",
@@ -335,6 +333,25 @@ export default function CreateTestPage() {
               <Button onClick={addOption} className="mt-2">
                 Добавить вариант
               </Button>
+            </div>
+            <div>
+              <Label htmlFor="question-image">
+                Изображение (необязательно)
+              </Label>
+              <Input
+                id="question-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setCurrentQuestion((prev) => ({ ...prev, file }));
+                }}
+              />
+              {currentQuestion.file && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {currentQuestion.file.name}
+                </p>
+              )}
             </div>
             <Button onClick={addQuestion}>Добавить вопрос</Button>
           </CardContent>
