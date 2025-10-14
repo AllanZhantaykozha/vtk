@@ -151,7 +151,7 @@ export default function LecturePage() {
       link.download = `lecture-${lecture.id}.docx`;
       link.click();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError("Не удалось скачать лекцию: неверный формат файла");
     }
   }, [lecture]);

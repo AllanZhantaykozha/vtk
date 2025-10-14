@@ -44,6 +44,39 @@ type Subject = {
   description?: string;
 };
 
+interface ApiOption {
+  id?: number;
+  text: string;
+}
+
+interface ApiQuestion {
+  id: number;
+  text: string;
+  type: "single" | "multiple";
+  options: ApiOption[];
+  correct: number[];
+}
+
+interface ApiTest {
+  id: number;
+  title: string;
+  description: string;
+  subject: { id: number; name: string };
+  questions: ApiQuestion[];
+}
+
+interface PayloadOption {
+  id: number;
+  text: string;
+}
+
+interface PayloadQuestion {
+  text: string;
+  type: "single" | "multiple";
+  options: PayloadOption[];
+  correct: number[]; // indices
+}
+
 export default function EditTestPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -98,13 +131,13 @@ export default function EditTestPage() {
           );
         }
 
-        const testData = await testResponse.json();
+        const testData: ApiTest = await testResponse.json();
 
         // Нормализуем вопросы: приведём correct к форме [optionId, ...]
         const questions: Question[] = Array.isArray(testData.questions)
-          ? testData.questions.map((q: any) => {
+          ? testData.questions.map((q: ApiQuestion) => {
               const options: Option[] = Array.isArray(q.options)
-                ? q.options.map((opt: any, idx: number) => ({
+                ? q.options.map((opt: ApiOption) => ({
                     id:
                       typeof opt.id === "number"
                         ? opt.id
@@ -120,7 +153,7 @@ export default function EditTestPage() {
                 // Если значения выглядят как индексы (0..options.length-1)
                 const looksLikeIndices =
                   q.correct.every(
-                    (c: any) =>
+                    (c: number) =>
                       Number.isInteger(c) && c >= 0 && c < (options.length || 0)
                   ) && options.length > 0;
 
@@ -128,12 +161,12 @@ export default function EditTestPage() {
                   correctIds = q.correct
                     .map((idx: number) => options[idx]?.id)
                     .filter(
-                      (v: string | number) => typeof v === "number"
+                      (v: number | undefined) => typeof v === "number"
                     ) as number[];
                 } else {
                   // Скорее всего это уже id'шники
                   correctIds = q.correct
-                    .filter((c: any) => typeof c === "number")
+                    .filter((c: number) => Number.isInteger(c))
                     .map((c: number) => c);
                 }
               } else {
@@ -174,9 +207,9 @@ export default function EditTestPage() {
         if (!subjectsResponse.ok) {
           throw new Error("Ошибка при загрузке предметов");
         }
-        const subjectsData = await subjectsResponse.json();
+        const subjectsData: Subject[] = await subjectsResponse.json();
         setSubjects(subjectsData);
-      } catch (err) {
+      } catch (err: unknown) {
         setError(
           err instanceof Error
             ? err.message
@@ -202,10 +235,7 @@ export default function EditTestPage() {
           correct: [],
         };
       }
-      const maxExisting = prev.options.length
-        ? Math.max(...prev.options.map((o) => o.id))
-        : 0;
-      // - используем отрицательные id по ref
+
       const newId = tempOptionId.current--;
       return {
         ...prev,
@@ -266,7 +296,7 @@ export default function EditTestPage() {
       text: question.text,
       image: question.image,
       type: question.type === "multiple" ? "multiple" : "single",
-      options: (question.options || []).map((o) => ({
+      options: (question.options || []).map((o: Option) => ({
         id: o.id,
         text: o.text,
       })),
@@ -348,8 +378,8 @@ export default function EditTestPage() {
       }
 
       // Подготовка payload: для бэка correct должны быть индексы вариантов.
-      const questionsPayload = test.questions.map((q) => {
-        const options = q.options.map((opt) => ({
+      const questionsPayload: PayloadQuestion[] = test.questions.map((q) => {
+        const options: PayloadOption[] = q.options.map((opt) => ({
           id: opt.id,
           text: opt.text,
         }));
@@ -402,13 +432,15 @@ export default function EditTestPage() {
             "Доступ запрещен: только создатель теста или администратор может редактировать"
           );
         if (response.status === 404) throw new Error("Тест не найден");
-        const text = await response.text().catch(() => response.statusText);
+        const text: string = await response
+          .text()
+          .catch((): string => response.statusText);
         throw new Error(`Ошибка при обновлении теста: ${text}`);
       }
 
       toast.success("Тест успешно обновлен");
       router.push(`/teacher/tests/${id}`);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
         err instanceof Error
           ? err.message
@@ -452,7 +484,7 @@ export default function EditTestPage() {
 
       toast.success("Тест успешно удален");
       router.push("/teacher/tests");
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
         err instanceof Error
           ? err.message

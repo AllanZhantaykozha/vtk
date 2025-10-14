@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { News } from "../types/news.type";
 
-const NewsItem = ({ title, image, content, createdAt, updatedAt }: News) => {
+const NewsItem = ({ title, image, createdAt }: News) => {
   return (
     <div className="w-[400px] h-[300px] relative rounded-2xl overflow-hidden">
       <Image

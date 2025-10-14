@@ -63,6 +63,9 @@ export const ROUTES = {
       path: `/subjects/get-my-subjects`,
       method: "GET",
     },
+    create: { path: `/subjects/`, method: "POST" },
+    update: { path: `/subjects/{id}`, method: "PATCH" },
+    delete: { path: `/subjects/{id}`, method: "DELETE" },
   },
   teacher: {
     getLectures: { path: `/teacher/lectures`, method: "GET" },

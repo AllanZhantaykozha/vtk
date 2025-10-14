@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -20,27 +20,15 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-type Subject = { id: number; name: string };
-type Group = { id: number; name: string; subjects: { subject: Subject }[] };
-interface User {
-  id: number;
-  fullName: string;
-  login: string;
-  password: string;
-  createdAt: string;
-  student: { group: { id: number; name: string } | null } | null;
-  teacher: { subjects: { subject: Subject }[] } | null;
-}
-type UserType = "Админ" | "Студент" | "Преподаватель";
+import { UserProfile } from "@/components/types/user.type";
+import { Subject } from "@/components/types/subject.type";
+import { Group } from "@/components/types/group.type";
+import { useApi } from "@/hooks/useApi";
 
 export default function AdminPage() {
-  const [token, setToken] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
-
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
 
   const [selectedType, setSelectedType] = useState("Студент");
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
@@ -60,57 +48,101 @@ export default function AdminPage() {
   const [editGroupId, setEditGroupId] = useState<number | null>(null);
   const [editSubjectId, setEditSubjectId] = useState<number | null>(null);
 
+  // Хуки для списков
+  const subjectsList = useApi<Subject[], "subjects", "getAll">(
+    "subjects",
+    "getAll",
+    {
+      enabled: true,
+    }
+  );
+
+  const groupsList = useApi<Group[], "groups", "getAll">("groups", "getAll", {
+    enabled: true,
+  });
+
+  const usersList = useApi<UserProfile[], "users", "getAll">(
+    "users",
+    "getAll",
+    { enabled: true }
+  );
+
+  // Хуки для мутаций subjects
+  const subjectsCreate = useApi<unknown, "subjects", "create">(
+    "subjects",
+    "create",
+    {
+      enabled: false,
+    }
+  );
+  const subjectsUpdate = useApi<unknown, "subjects", "update">(
+    "subjects",
+    "update",
+    {
+      enabled: false,
+    }
+  );
+  const subjectsDelete = useApi<unknown, "subjects", "delete">(
+    "subjects",
+    "delete",
+    {
+      enabled: false,
+    }
+  );
+
+  // Хуки для мутаций groups
+  const groupsCreate = useApi<unknown, "groups", "create">("groups", "create", {
+    enabled: false,
+  });
+  const groupsUpdate = useApi<unknown, "groups", "update">("groups", "update", {
+    enabled: false,
+  });
+  const groupsDelete = useApi<unknown, "groups", "delete">("groups", "delete", {
+    enabled: false,
+  });
+
+  // Хуки для мутаций users
+  const usersCreate = useApi<unknown, "users", "create">("users", "create", {
+    enabled: false,
+  });
+  const usersUpdate = useApi<unknown, "users", "update">("users", "update", {
+    enabled: false,
+  });
+  const usersDelete = useApi<unknown, "users", "delete">("users", "delete", {
+    enabled: false,
+  });
+
+  // Обновление состояний из хуков
   useEffect(() => {
-    const t = localStorage.getItem("token");
-    if (t) setToken(t);
-    setReady(true);
-  }, []);
+    if (subjectsList.data) setSubjects(subjectsList.data);
+  }, [subjectsList.data]);
+
+  useEffect(() => {
+    if (groupsList.data) setGroups(groupsList.data);
+  }, [groupsList.data]);
+
+  useEffect(() => {
+    if (usersList.data) setUsers(usersList.data);
+  }, [usersList.data]);
+
+  // Обработка ошибок списков
+  useEffect(() => {
+    if (subjectsList.error) setError(subjectsList.error);
+  }, [subjectsList.error]);
+
+  useEffect(() => {
+    if (groupsList.error) setError(groupsList.error);
+  }, [groupsList.error]);
+
+  useEffect(() => {
+    if (usersList.error) setError(usersList.error);
+  }, [usersList.error]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     document.cookie = "token=; path=/; max-age=0";
     window.location.href = "/login";
   };
-
-  const fetchWithToken = async (url: string, options: RequestInit = {}) => {
-    if (!token) throw new Error("JWT токен не найден");
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {}),
-      },
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.message || `${res.status} ${res.statusText}`);
-    }
-    return res.json();
-  };
-
-  const fetchAll = useCallback(async () => {
-    try {
-      const [subjData, groupData, userData] = await Promise.all([
-        fetchWithToken("http://localhost:4000/subjects"),
-        fetchWithToken("http://localhost:4000/groups"),
-        fetchWithToken("http://localhost:4000/users"),
-      ]);
-      setSubjects(subjData);
-      setGroups(groupData);
-      setUsers(userData);
-    } catch (err) {
-      if (err instanceof Error) setError(err.message);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (ready && token) fetchAll();
-  }, [ready, token, fetchAll]);
-
-  useEffect(() => {
-    if (ready && token) fetchAll();
-  }, [ready, token]);
 
   const toggleSubject = (id: number) =>
     setSelectedSubjects((prev) =>
@@ -124,7 +156,35 @@ export default function AdminPage() {
 
   // --- Users ---
   const createOrUpdateUser = async () => {
-    const body: any = { login, fullName };
+    const body: UserProfile = {
+      login,
+      fullName,
+      id: 0,
+      role: "",
+      birthDate: null,
+      password: "",
+      course: null,
+      student: null,
+      teacher: null,
+      groupId: 0,
+      subjectIds: [],
+      group: {
+        name: "",
+        subjects: [
+          {
+            subject: {
+              name: "",
+              id: 0,
+              teacher: {
+                user: {
+                  fullName: "",
+                },
+              },
+            },
+          },
+        ],
+      },
+    };
     if (password) body.password = password;
     if (selectedType === "Студент") {
       if (!selectedGroup) return setError("Выберите группу");
@@ -139,103 +199,100 @@ export default function AdminPage() {
       body.role = "admin";
     }
 
-    try {
-      if (editUserId) {
-        await fetchWithToken(`http://localhost:4000/users/${editUserId}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
-        setEditUserId(null);
-      } else {
-        await fetchWithToken("http://localhost:4000/users", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-      }
-      await fetchAll();
-      setLogin("");
-      setFullName("");
-      setPassword("");
-      setSelectedSubjects([]);
-      setSelectedGroup(null);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    const targetApi = editUserId ? usersUpdate : usersCreate;
+    const options = editUserId
+      ? { params: { id: editUserId.toString() }, body }
+      : { body };
+
+    await targetApi.refetch(options);
+    if (targetApi.error) {
+      setError(targetApi.error);
+      return;
     }
+
+    await usersList.refetch();
+    setLogin("");
+    setFullName("");
+    setPassword("");
+    setSelectedSubjects([]);
+    setSelectedGroup(null);
+    setEditUserId(null);
+    setError(null);
   };
 
   const deleteUser = async (id: number) => {
-    await fetchWithToken(`http://localhost:4000/users/${id}`, {
-      method: "DELETE",
-    });
-    await fetchAll();
+    await usersDelete.refetch({ params: { id: id.toString() } });
+    if (usersDelete.error) {
+      setError(usersDelete.error);
+      return;
+    }
+    await usersList.refetch();
   };
 
   // --- Groups ---
   const createOrUpdateGroup = async () => {
     const body = { name: newGroupName, subjectIds: newGroupSubjects };
-    try {
-      if (editGroupId) {
-        await fetchWithToken(`http://localhost:4000/groups/${editGroupId}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
-        setEditGroupId(null);
-      } else {
-        await fetchWithToken("http://localhost:4000/groups", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-      }
-      await fetchAll();
-      setNewGroupName("");
-      setNewGroupSubjects([]);
-    } catch (err: any) {
-      setError(err.message);
+    const targetApi = editGroupId ? groupsUpdate : groupsCreate;
+    const options = editGroupId
+      ? { params: { id: editGroupId.toString() }, body }
+      : { body };
+
+    await targetApi.refetch(options);
+    if (targetApi.error) {
+      setError(targetApi.error);
+      return;
     }
+
+    await groupsList.refetch();
+    setNewGroupName("");
+    setNewGroupSubjects([]);
+    setEditGroupId(null);
+    setError(null);
   };
 
   const deleteGroup = async (id: number) => {
-    await fetchWithToken(`http://localhost:4000/groups/${id}`, {
-      method: "DELETE",
+    await groupsDelete.refetch({
+      params: { id: id.toString() },
     });
-    await fetchAll();
+    if (groupsDelete.error) {
+      setError(groupsDelete.error);
+      return;
+    }
+    await groupsList.refetch();
   };
 
   // --- Subjects ---
   const createOrUpdateSubject = async () => {
     const body = { name: newSubjectName };
-    try {
-      if (editSubjectId) {
-        await fetchWithToken(
-          `http://localhost:4000/subjects/${editSubjectId}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(body),
-          }
-        );
-        setEditSubjectId(null);
-      } else {
-        await fetchWithToken("http://localhost:4000/subjects", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-      }
-      await fetchAll();
-      setNewSubjectName("");
-    } catch (err: any) {
-      setError(err.message);
+    const targetApi = editSubjectId ? subjectsUpdate : subjectsCreate;
+    const options = editSubjectId
+      ? { params: { id: editSubjectId.toString() }, body }
+      : { body };
+
+    await targetApi.refetch(options);
+    if (targetApi.error) {
+      setError(targetApi.error);
+      return;
     }
+
+    await subjectsList.refetch();
+    setNewSubjectName("");
+    setEditSubjectId(null);
+    setError(null);
   };
 
   const deleteSubject = async (id: number) => {
-    await fetchWithToken(`http://localhost:4000/subjects/${id}`, {
-      method: "DELETE",
+    await subjectsDelete.refetch({
+      params: { id: id.toString() },
     });
-    await fetchAll();
+    if (subjectsDelete.error) {
+      setError(subjectsDelete.error);
+      return;
+    }
+    await subjectsList.refetch();
   };
 
-  const getUserType = (user: User): UserType =>
+  const getUserType = (user: UserProfile) =>
     user.student ? "Студент" : user.teacher ? "Преподаватель" : "Админ";
 
   return (

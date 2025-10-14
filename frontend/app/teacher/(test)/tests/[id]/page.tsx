@@ -50,13 +50,15 @@ export default function TestPage() {
 
         setTest(data);
         setLoading(false);
-      } catch (err: any) {
-        setError(err.message);
-        setLoading(false);
-        if (err.message.includes("Unauthorized")) {
-          localStorage.removeItem("token");
-          document.cookie = "auth_token=; path=/; max-age=0";
-          router.push("/login");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+          setLoading(false);
+          if (err.message.includes("Unauthorized")) {
+            localStorage.removeItem("token");
+            document.cookie = "auth_token=; path=/; max-age=0";
+            router.push("/login");
+          }
         }
       }
     };
@@ -112,12 +114,14 @@ export default function TestPage() {
       const result = await response.json();
       setScore(result.score);
       setIsDialogOpen(true);
-    } catch (err: any) {
-      setError(err.message);
-      if (err.message.includes("Unauthorized")) {
-        localStorage.removeItem("token");
-        document.cookie = "auth_token=; path=/; max-age=0";
-        router.push("/login");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        if (err.message.includes("Unauthorized")) {
+          localStorage.removeItem("token");
+          document.cookie = "auth_token=; path=/; max-age=0";
+          router.push("/login");
+        }
       }
     }
   };
@@ -180,10 +184,10 @@ export default function TestPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {q.image && (
+                  {q.file && (
                     <div className="mb-4">
                       <Image
-                        src={q.image}
+                        src={typeof q.file === "string" ? q.file : ""}
                         alt="question"
                         width={400}
                         height={300}

@@ -14,16 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-// Тип вопроса
-type Question = {
-  id: number;
-  text: string;
-  image?: string;
-  type: "single" | "multiple";
-  options: { id: number; text: string }[];
-  correct: number[];
-};
+import { Question } from "@/components/types/test.type";
 
 // Тип теста
 type Test = {
@@ -41,7 +32,7 @@ type Subject = {
 
 export default function CreateTestPage() {
   const [currentQuestion, setCurrentQuestion] = useState<
-    Partial<Question> & { file?: File }
+    Omit<Question, "id"> & { file?: File }
   >({
     text: "",
     type: "single",
@@ -167,7 +158,7 @@ export default function CreateTestPage() {
     formData.append("subjectId", String(test.subjectId));
 
     // Сериализуем вопросы, но без файлов
-    const questions = test.questions.map(({ file, ...rest }) => rest);
+    const questions = test.questions.map(({ ...rest }) => rest);
     formData.append("questions", JSON.stringify(questions));
 
     // Прикрепляем файлы

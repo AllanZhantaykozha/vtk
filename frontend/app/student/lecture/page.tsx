@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -71,7 +71,7 @@ export default function LecturePage() {
 
   useEffect(() => {
     if (data) return setLectures(data);
-  });
+  }, [data]);
 
   if (isLoading) {
     return <Loading />;

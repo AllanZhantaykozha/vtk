@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["localhost"], // разрешить загрузку с localhost
+    domains: ["localhost", "github.com", "picsum.photos"], // разрешить загрузку с localhost
   },
 };
 

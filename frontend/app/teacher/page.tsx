@@ -8,6 +8,7 @@ import { UserProfile } from "@/components/types/user.type";
 import { Test } from "@/components/types/test.type";
 import StudentListBySubjects from "@/components/ux/teacher/StudentListBySubjects";
 import Link from "next/link";
+import { useApi } from "@/hooks/useApi";
 
 export default function TeacherPage() {
   const router = useRouter();
@@ -16,53 +17,48 @@ export default function TeacherPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+  const profileHook = useApi<UserProfile, "users", "getMe">("users", "getMe", {
+    enabled: true,
+  });
+  const testsHook = useApi<Test[], "tests", "getAll">("tests", "getAll", {
+    enabled: true,
+  });
 
-      // Профиль учителя
-      const profileResponse = await fetch("http://localhost:4000/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!profileResponse.ok) throw new Error("Ошибка загрузки профиля");
-
-      const profileData: UserProfile = await profileResponse.json();
-      setProfile(profileData);
-
-      // Тесты, созданные этим учителем
-      const testsResponse = await fetch("http://localhost:4000/tests", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!testsResponse.ok) throw new Error("Ошибка загрузки тестов");
-
-      const testsData: Test[] = await testsResponse.json();
-      setTests(testsData);
-
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-      if (err.message.includes("Unauthorized")) {
-        localStorage.removeItem("token");
-        document.cookie = "auth_token=; path=/; max-age=0";
-        router.push("/login");
-      }
+  useEffect(() => {
+    const unauthorized =
+      profileHook.error?.includes("Unauthorized") ||
+      testsHook.error?.includes("Unauthorized");
+    if (unauthorized) {
+      localStorage.removeItem("token");
+      document.cookie = "token=; path=/; max-age=0";
+      router.push("/login");
+      return;
     }
-  };
+
+    if (profileHook.error || testsHook.error) {
+      setError(profileHook.error || testsHook.error);
+      setLoading(false);
+      return;
+    }
+
+    if (profileHook.data && testsHook.data) {
+      setProfile(profileHook.data);
+      setTests(testsHook.data);
+      setLoading(false);
+    }
+  }, [
+    profileHook.data,
+    profileHook.error,
+    testsHook.data,
+    testsHook.error,
+    router,
+  ]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     document.cookie = "token=; path=/; max-age=0"; // кука сбрасывается
     window.location.href = "/login"; // жёсткий редирект, чтобы middleware отработал
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [router]);
 
   if (loading) {
     return (

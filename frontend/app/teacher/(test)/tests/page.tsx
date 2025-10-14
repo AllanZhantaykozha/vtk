@@ -63,7 +63,7 @@ export default function TestsPage() {
         const testsData = await testsRes.json();
         const subjectsData = await subjectsRes.json();
 
-        const transformedTests: Test[] = testsData.map((test: any) => ({
+        const transformedTests: Test[] = testsData.map((test: Test) => ({
           id: test.id,
           title: test.title,
           description: test.description || "Описание отсутствует",

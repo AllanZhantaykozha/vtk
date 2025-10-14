@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { Submission } from "@/components/types/test.type";
+import { useApi } from "@/hooks/useApi";
 
 interface Subject {
   id: number;
@@ -68,40 +69,45 @@ export default function StudentPage() {
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [grade, setGrade] = useState<number | null>(null);
 
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+  const profileHook = useApi<UserProfile, "users", "getMe">("users", "getMe", {
+    enabled: true,
+  });
+  const testsHook = useApi<Test[], "tests", "getAll">("tests", "getAll", {
+    enabled: true,
+  });
 
-      const profileResponse = await fetch("http://localhost:4000/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!profileResponse.ok) throw new Error("Ошибка при загрузке профиля");
-      const profileData: UserProfile = await profileResponse.json();
-      setProfile(profileData);
+  useEffect(() => {
+    const unauthorized =
+      profileHook.error?.includes("Unauthorized") ||
+      testsHook.error?.includes("Unauthorized");
+    if (unauthorized) {
+      localStorage.removeItem("token");
+      document.cookie = "token=; path=/; max-age=0";
+      router.push("/login");
+      return;
+    }
 
-      if (profileData.subjects) {
-        const lessonsList: LessonData[] = profileData.subjects.map((s) => ({
-          subject: s.name,
-          teachers: s.teachers.map((t) => t.teacher.user.fullName),
-        }));
+    if (profileHook.error || testsHook.error) {
+      setError(profileHook.error || testsHook.error);
+      setLoading(false);
+      return;
+    }
+
+    if (profileHook.data && testsHook.data) {
+      setProfile(profileHook.data);
+
+      if (profileHook.data.subjects) {
+        const lessonsList: LessonData[] = profileHook.data.subjects.map(
+          (s) => ({
+            subject: s.name,
+            teachers: s.teachers.map((t) => t.teacher.user.fullName),
+          })
+        );
         setLessons(lessonsList);
       }
 
-      const testsResponse = await fetch("http://localhost:4000/tests", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!testsResponse.ok) throw new Error("Ошибка при загрузке тестов");
-      const testsData: Test[] = await testsResponse.json();
-
-      console.log(testsData);
-
-      const transformedTestData: TestData[] = testsData
+      const transformedTestData: TestData[] = testsHook.data
         .flatMap((test: Test) =>
           test.submissions.map((s: Submission) => ({
             id: test.id,
@@ -118,30 +124,22 @@ export default function StudentPage() {
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
 
-      console.log(transformedTestData);
-
       setTestData(transformedTestData);
       setLoading(false);
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-      if (err.message.includes("Unauthorized")) {
-        localStorage.removeItem("token");
-        document.cookie = "auth_token=; path=/; max-age=0";
-        router.push("/login");
-      }
     }
-  };
+  }, [
+    profileHook.data,
+    profileHook.error,
+    testsHook.data,
+    testsHook.error,
+    router,
+  ]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     document.cookie = "token=; path=/; max-age=0";
     window.location.href = "/login";
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [router]);
 
   if (loading)
     return (
@@ -161,7 +159,11 @@ export default function StudentPage() {
       <div className="flex gap-10">
         <div className="rounded-full overflow-hidden w-[250px] h-[250px]">
           <Avatar className="w-full h-full">
-            <AvatarImage src="https://github.com/shadcn.png" />
+            <AvatarImage
+              width={400}
+              height={400}
+              src="https://github.com/shadcn.png"
+            />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
         </div>

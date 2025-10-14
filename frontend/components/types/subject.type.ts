@@ -25,3 +25,39 @@ export interface SubjectStudent {
     };
   };
 }
+
+export interface StudentSubjectsResponse {
+  group: {
+    subjects: {
+      subject: {
+        id: number;
+        name: string;
+        tests: {
+          id: number;
+          title: string;
+        }[];
+        lectures: {
+          id: number;
+          title: string;
+        }[];
+        teachers: Teachers;
+      };
+    }[];
+  };
+}
+
+// subject.type.ts
+export interface Test {
+  id: number;
+  title: string;
+}
+
+export interface Lecture {
+  id: number;
+  title: string;
+}
+
+export interface Teacher {
+  id: number;
+  name: string;
+}

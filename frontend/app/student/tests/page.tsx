@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -97,7 +97,12 @@ export default function TestsPage() {
   const getSubmissionStatus = (
     test: ITransformedTest
   ): TestSubmissionStatus | null => {
-    const submissions = test.submissions.sort((a, b) => a - b);
+    if (!test.submissions?.length) return null;
+
+    const submissions = test.submissions.sort(
+      (a, b) =>
+        new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime()
+    );
 
     return submissions.at(-1)?.status || null;
   };

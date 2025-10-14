@@ -8,9 +8,10 @@ export interface Option {
 export interface Question {
   id: number;
   text: string;
-  image?: string;
+  file?: string | File;
   type: "single" | "multiple";
   options: Option[];
+  correct: number[];
 }
 
 export interface Submission {

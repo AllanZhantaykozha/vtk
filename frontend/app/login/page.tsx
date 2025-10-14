@@ -70,12 +70,21 @@ export default function LoginPage() {
         default:
           throw new Error("Неизвестная роль пользователя");
       }
-    } catch (err: any) {
-      setError(
-        err.message === "Invalid credentials"
-          ? "Неверный логин или пароль"
-          : err.message
-      );
+    } catch (err: unknown) {
+      setLoading(false);
+
+      if (err instanceof Error) {
+        setError(err.message);
+
+        if (err.message.includes("Unauthorized")) {
+          localStorage.removeItem("token");
+          document.cookie = "auth_token=; path=/; max-age=0";
+          router.push("/login");
+        }
+      } else {
+        // Если это не Error, можно обработать как неизвестную ошибку
+        setError("Произошла неизвестная ошибка");
+      }
     } finally {
       setLoading(false);
     }

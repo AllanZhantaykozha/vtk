@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { StudentNavbar } from "@/components/ux/navbar/student-navbar";
 
 export default function TeacherLayout({
@@ -10,8 +10,10 @@ export default function TeacherLayout({
 }) {
   return (
     <div className="flex flex-col">
-      <StudentNavbar />
-      <main className="container mx-auto">{children}</main>
+      <Suspense fallback={<div>Загрузка...</div>}>
+        <StudentNavbar />
+        <main className="container mx-auto">{children}</main>
+      </Suspense>
     </div>
   );
 }

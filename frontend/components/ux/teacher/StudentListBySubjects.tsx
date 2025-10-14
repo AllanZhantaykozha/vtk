@@ -1,5 +1,6 @@
 "use client";
 
+import { RawSubject } from "@/components/types/user.type";
 import React, { useEffect, useState } from "react";
 
 interface Student {
@@ -40,13 +41,13 @@ export default function StudentListBySubjects() {
       const rawData = await res.json();
 
       // Трансформация
-      const data: Subject[] = rawData.map((subject: any) => ({
+      const data: Subject[] = rawData.map((subject: RawSubject) => ({
         id: subject.id,
         name: subject.name,
-        groups: subject.groups.map((g: any) => ({
+        groups: subject.groups.map((g) => ({
           id: g.group.id,
           name: g.group.name,
-          students: g.group.students.map((s: any) => ({
+          students: g.group.students.map((s) => ({
             id: s.id,
             fullName: s.user.fullName,
           })),

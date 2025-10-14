@@ -64,7 +64,7 @@ export default function LecturePage() {
         const subjectsData = await subjectsRes.json();
 
         const transformedLectures: Lecture[] = lecturesData.map(
-          (lecture: any) => ({
+          (lecture: Lecture) => ({
             id: lecture.id,
             title: lecture.title,
             description: lecture.description || "Описание отсутствует",

@@ -13,13 +13,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge"; // Assuming Badge is available from shadcn/ui
-import {
-  Bell,
-  CheckCircle,
-  AlertCircle,
-  MessageCircle,
-  Info,
-} from "lucide-react"; // Assuming Lucide icons are installed
+import { CheckCircle, AlertCircle, MessageCircle, Info } from "lucide-react"; // Assuming Lucide icons are installed
 import { useApi } from "@/hooks/useApi";
 import { Subject } from "@/components/types/subject.type";
 import { ListItem } from "../ListItem";
@@ -47,11 +41,19 @@ type UINotification = {
   textColor: string;
 };
 
-function normalizeSubjects(data: any): Subject[] {
+interface GroupSubjectEntry {
+  group?: {
+    subjects: {
+      subject: Subject;
+    }[];
+  };
+}
+
+function normalizeSubjects(data: GroupSubjectEntry[]): Subject[] {
   if (!Array.isArray(data)) return [];
   return data.flatMap((entry) =>
     Array.isArray(entry.group?.subjects)
-      ? entry.group.subjects.map((item: any) => item.subject)
+      ? entry.group.subjects.map((item) => item.subject)
       : []
   );
 }
@@ -125,7 +127,7 @@ function inferHref(text: string): string {
 
 // Transform backend data to UI format
 function transformNotifications(
-  backendData: BackendNotification[] | undefined
+  backendData: BackendNotification[] | undefined | null
 ): UINotification[] {
   if (!backendData || !Array.isArray(backendData)) return [];
   return backendData.map((notif) => {
@@ -151,12 +153,12 @@ function transformNotifications(
 
 export function StudentNavbar() {
   const { data, error, isLoading } = useApi<
-    Subject[],
+    GroupSubjectEntry[],
     "student",
     "getMySubjects"
   >("student", "getMySubjects");
 
-  const subjects = normalizeSubjects(data);
+  const subjects = normalizeSubjects(data ?? []);
 
   const {
     data: backendNotifications,

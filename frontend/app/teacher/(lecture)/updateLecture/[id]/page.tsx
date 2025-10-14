@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useApi } from "@/hooks/useApi";
 
 interface Lecture {
   id: number;
@@ -53,6 +54,36 @@ export default function EditLecturePage() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const lectureHook = useApi<Lecture, "lectures", "getById">(
+    "lectures",
+    "getById",
+    {
+      params: { id: id as string },
+      enabled: !!id,
+    }
+  );
+  const subjectsHook = useApi<Subject[], "subjects", "getMySubjects">(
+    "subjects",
+    "getMySubjects",
+    {
+      enabled: true,
+    }
+  );
+  const updateLectureHook = useApi<unknown, "lectures", "update">(
+    "lectures",
+    "update",
+    {
+      enabled: false,
+    }
+  );
+  const deleteLectureHook = useApi<unknown, "lectures", "delete">(
+    "lectures",
+    "delete",
+    {
+      enabled: false,
+    }
+  );
+
   const isValidFileContent = (fileContent: Lecture["fileContent"]) => {
     if (!fileContent) return false;
     return Object.entries(fileContent).every(
@@ -60,45 +91,28 @@ export default function EditLecturePage() {
     );
   };
 
-  const fetchLectureAndSubjects = async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    const unauthorized =
+      lectureHook.error?.includes("Unauthorized") ||
+      subjectsHook.error?.includes("Unauthorized");
+    if (unauthorized) {
+      localStorage.removeItem("token");
+      router.push("/login");
+      return;
+    }
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+    if (lectureHook.error || subjectsHook.error) {
+      setError(lectureHook.error || subjectsHook.error);
+      setLoading(false);
+      return;
+    }
 
-      // Fetch lecture
-      const lectureResponse = await fetch(
-        `http://localhost:4000/lectures/${id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!lectureResponse.ok) {
-        if (lectureResponse.status === 401)
-          throw new Error("Нет доступа: пожалуйста, войдите снова");
-        if (lectureResponse.status === 403)
-          throw new Error(
-            "Доступ запрещен: только создатель лекции или администратор может редактировать"
-          );
-        if (lectureResponse.status === 404)
-          throw new Error("Лекция не найдена");
-        throw new Error(
-          `Ошибка при получении лекции: ${lectureResponse.statusText}`
-        );
-      }
-
-      const lectureData = await lectureResponse.json();
+    if (lectureHook.data && subjectsHook.data) {
+      const lectureData = lectureHook.data;
       if (!lectureData.id) {
-        throw new Error("Неверные данные лекции");
+        setError("Неверные данные лекции");
+        setLoading(false);
+        return;
       }
 
       setLecture({
@@ -129,36 +143,17 @@ export default function EditLecturePage() {
         file: null,
       });
 
-      // Fetch subjects
-      const subjectsResponse = await fetch(
-        "http://localhost:4000/subjects/get-my-subjects",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!subjectsResponse.ok) {
-        throw new Error("Ошибка при получении списка предметов");
-      }
-
-      const subjectsData = await subjectsResponse.json();
-      setSubjects(subjectsData);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Произошла ошибка при загрузке данных"
-      );
-    } finally {
+      setSubjects(subjectsHook.data);
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (id) fetchLectureAndSubjects();
-  }, [id, router]);
+  }, [
+    lectureHook.data,
+    lectureHook.error,
+    subjectsHook.data,
+    subjectsHook.error,
+    id,
+    router,
+  ]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -182,12 +177,6 @@ export default function EditLecturePage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
       let fileContentBase64: string | undefined;
       if (formData.file) {
         const arrayBuffer = await formData.file.arrayBuffer();
@@ -201,24 +190,24 @@ export default function EditLecturePage() {
         fileContent: fileContentBase64,
       };
 
-      const response = await fetch(`http://localhost:4000/lectures/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updateData),
-      });
+      const options = { params: { id: id as string }, body: updateData };
+      await updateLectureHook.refetch(options);
 
-      if (!response.ok) {
-        if (response.status === 401)
+      if (updateLectureHook.error) {
+        if (updateLectureHook.error.includes("401")) {
           throw new Error("Нет доступа: пожалуйста, войдите снова");
-        if (response.status === 403)
+        }
+        if (updateLectureHook.error.includes("403")) {
           throw new Error(
             "Доступ запрещен: только создатель лекции или администратор может редактировать"
           );
-        if (response.status === 404) throw new Error("Лекция не найдена");
-        throw new Error(`Ошибка при обновлении лекции: ${response.statusText}`);
+        }
+        if (updateLectureHook.error.includes("404")) {
+          throw new Error("Лекция не найдена");
+        }
+        throw new Error(
+          `Ошибка при обновлении лекции: ${updateLectureHook.error}`
+        );
       }
 
       toast.success("Лекция успешно обновлена");
@@ -241,28 +230,24 @@ export default function EditLecturePage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+      const options = { params: { id: id as string } };
+      await deleteLectureHook.refetch(options);
 
-      const response = await fetch(`http://localhost:4000/lectures/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401)
+      if (deleteLectureHook.error) {
+        if (deleteLectureHook.error.includes("401")) {
           throw new Error("Нет доступа: пожалуйста, войдите снова");
-        if (response.status === 403)
+        }
+        if (deleteLectureHook.error.includes("403")) {
           throw new Error(
             "Доступ запрещен: только создатель лекции или администратор может удалить"
           );
-        if (response.status === 404) throw new Error("Лекция не найдена");
-        throw new Error(`Ошибка при удалении лекции: ${response.statusText}`);
+        }
+        if (deleteLectureHook.error.includes("404")) {
+          throw new Error("Лекция не найдена");
+        }
+        throw new Error(
+          `Ошибка при удалении лекции: ${deleteLectureHook.error}`
+        );
       }
 
       toast.success("Лекция успешно удалена");

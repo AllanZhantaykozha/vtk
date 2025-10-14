@@ -16,7 +16,6 @@ import { ListItem } from "../ListItem";
 import { useApi } from "@/hooks/useApi";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle, Info, MessageCircle } from "lucide-react";
-import { Subject } from "@/components/types/subject.type";
 
 // Define Notification type from backend
 type BackendNotification = {
@@ -41,13 +40,19 @@ type UINotification = {
   textColor: string;
 };
 
-function normalizeSubjects(data: any): Subject[] {
-  if (!Array.isArray(data)) return [];
-  return data.flatMap((entry) =>
-    Array.isArray(entry.group?.subjects)
-      ? entry.group.subjects.map((item: any) => item.subject)
-      : []
-  );
+interface TeacherLecture {
+  description: string;
+}
+
+interface TeacherTest {
+  description: string;
+}
+
+interface TeacherSubject {
+  id: number;
+  name: string;
+  lectures: TeacherLecture[];
+  tests: TeacherTest[];
 }
 
 // Function to format timestamp to relative time
@@ -110,16 +115,16 @@ function parseTextToTitleDesc(text: string): {
 // Function to infer href based on text (basic keyword matching)
 function inferHref(text: string): string {
   const lowerText = text.toLowerCase();
-  if (lowerText.includes("тест")) return "/student/tests";
+  if (lowerText.includes("тест")) return "/teacher/tests";
   if (lowerText.includes("оценка") || lowerText.includes("результат"))
-    return "/student/journal";
-  if (lowerText.includes("лекция")) return "/student/lecture";
-  return "/student/notifications";
+    return "/teacher/journal";
+  if (lowerText.includes("лекция")) return "/teacher/lecture";
+  return "/teacher/notifications";
 }
 
 // Transform backend data to UI format
 function transformNotifications(
-  backendData: BackendNotification[] | undefined
+  backendData: BackendNotification[] | undefined | null
 ): UINotification[] {
   if (!backendData || !Array.isArray(backendData)) return [];
   return backendData.map((notif) => {
@@ -145,14 +150,16 @@ function transformNotifications(
 
 export function TeacherNavbar() {
   const {
-    data: subjects,
+    data: subjectsData,
     error,
     isLoading,
   } = useApi<
-    any[], // TData
+    TeacherSubject[], // TData
     "subjects", // C
     "getTeacherNavbar" // A
   >("subjects", "getTeacherNavbar");
+
+  const subjects: TeacherSubject[] = subjectsData ?? [];
 
   const {
     data: backendNotifications,
@@ -167,11 +174,15 @@ export function TeacherNavbar() {
     transformNotifications(backendNotifications);
 
   const renderSubjectsList = (
-    subjects: any[],
-    getDescription: (s: any) => string,
-    getCount: (s: any) => number,
+    subjects: TeacherSubject[],
+    getDescription: (s: TeacherSubject) => string,
+    getCount: (s: TeacherSubject) => number,
     baseHref: string
   ) => {
+    if (!subjects.length) {
+      return <li className="text-gray-600 p-2">Нет доступных предметов</li>;
+    }
+
     return subjects.map((subject) => {
       const description = getDescription(subject);
       const count = getCount(subject);
@@ -258,14 +269,16 @@ export function TeacherNavbar() {
                 <li className="text-gray-600 p-2">Загрузка...</li>
               ) : error ? (
                 <li className="text-red-600 p-2">{error}</li>
-              ) : subjects ? (
+              ) : subjects.length > 0 ? (
                 renderSubjectsList(
                   subjects,
                   (s) => s.lectures[0]?.description || "Без описания",
                   (s) => s.lectures.length,
                   "/teacher/lecture"
                 )
-              ) : null}
+              ) : (
+                <li className="text-gray-600 p-2">Нет доступных предметов</li>
+              )}
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -279,14 +292,16 @@ export function TeacherNavbar() {
                 <li className="text-gray-600 p-2">Загрузка...</li>
               ) : error ? (
                 <li className="text-red-600 p-2">{error}</li>
-              ) : subjects ? (
+              ) : subjects.length > 0 ? (
                 renderSubjectsList(
                   subjects.filter((s) => s.tests.length > 0),
                   (s) => s.tests[0]?.description || "Без описания",
                   (s) => s.tests.length,
                   "/teacher/tests"
                 )
-              ) : null}
+              ) : (
+                <li className="text-gray-600 p-2">Нет доступных тестов</li>
+              )}
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -334,7 +349,7 @@ export function TeacherNavbar() {
             {notifications.length > 3 && (
               <div className="p-4 border-t border-gray-200">
                 <Link
-                  href="/student/notifications"
+                  href="/teacher/notifications"
                   className="text-sm text-blue-600 hover:underline"
                 >
                   Просмотреть все
@@ -372,5 +387,3 @@ export function TeacherNavbar() {
     </NavigationMenu>
   );
 }
-
-//(4@HLGupG9LdsQg
