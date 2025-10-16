@@ -9,6 +9,7 @@ import { Test } from "@/components/types/test.type";
 import StudentListBySubjects from "@/components/ux/teacher/StudentListBySubjects";
 import Link from "next/link";
 import { useApi } from "@/hooks/useApi";
+import { LoginPage } from "@/src/pages/LoginPage";
 
 export default function TeacherPage() {
   const router = useRouter();
