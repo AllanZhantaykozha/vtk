@@ -691,4 +691,110 @@ export class TestsService {
       submission: updated,
     };
   }
+
+  async getStatistic(
+    user: User & { role: string; userId: number },
+    groupId?: number,
+  ) {
+    if (user.role !== 'admin' && user.role !== 'teacher') {
+      throw new ForbiddenException(
+        'Only admins and teachers can view statistics',
+      );
+    }
+
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const groupSubjects = await this.prisma.groupSubject.findMany({
+      include: {
+        group: true,
+        subject: true,
+      },
+    });
+
+    let filteredGroupSubjects = groupSubjects;
+    if (user.role === 'teacher') {
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { userId: user.userId },
+        include: { subjects: true },
+      });
+      if (!teacher) {
+        throw new ForbiddenException('User is not a registered teacher');
+      }
+      const teacherSubjectIds = teacher.subjects.map((ts) => ts.subjectId);
+      filteredGroupSubjects = groupSubjects.filter((gs) =>
+        teacherSubjectIds.includes(gs.subjectId),
+      );
+    }
+
+    // Фильтрация по groupId, если предоставлен
+    if (groupId !== undefined) {
+      filteredGroupSubjects = filteredGroupSubjects.filter(
+        (gs) => gs.group.id === groupId,
+      );
+    }
+
+    const stats = await Promise.all(
+      filteredGroupSubjects.map(async (gs) => {
+        const { group, subject } = gs;
+
+        const totalTests = await this.prisma.test.count({
+          where: {
+            subjectId: subject.id,
+            uploadDate: { gte: weekAgo },
+          },
+        });
+
+        const totalSubmissions = await this.prisma.testSubmission.count({
+          where: {
+            student: {
+              groupId: group.id,
+            },
+            test: {
+              subjectId: subject.id,
+              uploadDate: { gte: weekAgo },
+            },
+          },
+        });
+
+        const submissions = await this.prisma.testSubmission.findMany({
+          where: {
+            student: { groupId: group.id },
+            test: {
+              subjectId: subject.id,
+              uploadDate: { gte: weekAgo },
+            },
+          },
+          include: {
+            test: {
+              select: { questions: { select: { id: true } } },
+            },
+          },
+        });
+
+        let totalGrade = 0;
+        let subCount = 0;
+        for (const sub of submissions) {
+          const numQuestions = sub.test.questions.length;
+          if (numQuestions > 0) {
+            const grade = (sub.score / numQuestions) * 100;
+            totalGrade += grade;
+            subCount++;
+          }
+        }
+
+        const averageGrade =
+          subCount > 0 ? Math.round(totalGrade / subCount) : 0;
+
+        return {
+          groupName: group.name,
+          subjectName: subject.name,
+          totalTests,
+          totalSubmissions,
+          averageGrade,
+        };
+      }),
+    );
+
+    return stats.filter((s) => s.totalTests > 0);
+  }
 }

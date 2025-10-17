@@ -6,82 +6,42 @@ import {
   IslandHeader,
   IslandThemeEnum,
 } from "@/src/shared/ui/Island/Island";
-import { ProgressCart, ProgressCartDto } from "./ProgressCart";
+import { ProgressCart } from "./ProgressCart";
 import { Select } from "@/src/shared/ui/Select";
-
-export const progressCartMock: ProgressCartDto[] = [
-  {
-    title: "Основы программирования",
-    href: "/courses/programming-basics",
-    totalGrade: 87,
-    completedTests: 7,
-    totalTests: 10,
-  },
-  {
-    title: "Алгоритмы и структуры данных",
-    href: "/courses/algorithms",
-    totalGrade: 93,
-    completedTests: 5,
-    totalTests: 6,
-  },
-  {
-    title: "Базы данных",
-    href: "/courses/databases",
-    totalGrade: 78,
-    completedTests: 3,
-    totalTests: 5,
-  },
-  {
-    title: "Веб-разработка",
-    href: "/courses/web-dev",
-    totalGrade: 91,
-    completedTests: 8,
-    totalTests: 9,
-  },
-  {
-    title: "Операционные системы",
-    href: "/courses/os",
-    totalGrade: 44,
-    completedTests: 4,
-    totalTests: 5,
-  },
-];
-
-const select = [
-  {
-    id: 1,
-    title: "Apple",
-    link: "/",
-  },
-  {
-    id: 2,
-    title: "Orange",
-    link: "/",
-  },
-  {
-    id: 3,
-    title: "Melon",
-    link: "/",
-  },
-  {
-    id: 4,
-    title: "Watermelon",
-    link: "/",
-  },
-  {
-    id: 5,
-    title: "Peach",
-    link: "/",
-  },
-];
+import { useStatisticStore } from "@/src/shared/lib/stores/statisticStore";
+import { useState, useEffect } from "react";
+import { Statistic } from "@/src/entities/Test/types";
+import { useGroupStore } from "@/src/shared/lib/stores/groupStore";
+import { ProgressCartSkeleton } from "./Skeleton";
 
 export function ProgressIsland() {
+  const { statistics, isLoading, fetchStatistic } = useStatisticStore();
+  const { groups, isLoadingGroup, fetchGroup } = useGroupStore();
+  const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    fetchGroup();
+  }, [fetchGroup]);
+
+  useEffect(() => {
+    fetchStatistic(
+      selectedGroupId === undefined ? "" : String(selectedGroupId)
+    );
+  }, [selectedGroupId, fetchStatistic]);
+
   return (
-    <Island className="h-fit w-fit" theme={IslandThemeEnum.BLUE}>
+    <Island className="h-[300px] w-full" theme={IslandThemeEnum.BLUE}>
       <IslandHeader>
         <Icon icon="GraduationCap" theme={IconThemeEnum.WHITE} />
         <div className="text-white text-xl font-bold">Успеваемость</div>
-        <Select data={select} className="w-[150px]" />
+        <Select
+          data={groups || []}
+          selectedGroupId={selectedGroupId}
+          onChange={setSelectedGroupId}
+          className="w-[200px]"
+        />
       </IslandHeader>
       <IslandContent className="grid grid-flow-col gap-5">
         <div className="overflow-x-auto custom-scroll pb-2">
@@ -93,9 +53,19 @@ export function ProgressIsland() {
               snap-x snap-mandatory
             "
           >
-            {progressCartMock.map((obj: ProgressCartDto) => (
-              <ProgressCart key={obj.href} data={obj} />
-            ))}
+            {isLoading || isLoadingGroup ? (
+              Array.from({ length: 3 }, (_, index) => (
+                <ProgressCartSkeleton key={index} />
+              ))
+            ) : statistics?.length === 0 ? (
+              <div className="text-white text-3xl flex justify-center items-center w-full">
+                По этой группе нет данных
+              </div>
+            ) : (
+              statistics?.map((obj: Statistic, index: number) => (
+                <ProgressCart key={index} data={obj} />
+              ))
+            )}
           </div>
         </div>
       </IslandContent>

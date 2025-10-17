@@ -12,6 +12,7 @@ import {
   Delete,
   UploadedFiles,
   UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { TestsService } from './tests.service';
 import { CreateTestDto, SubmitTestDto, UpdateTestDto } from './dto/tests.dto';
@@ -25,6 +26,23 @@ import { diskStorage } from 'multer';
 @Controller('tests')
 export class TestsController {
   constructor(private testsService: TestsService) {}
+
+  @Get('getStatistic')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  async getStatistic(@Request() req, @Query('groupId') groupId?: string) {
+    let parsedGroupId: number | undefined;
+    if (groupId) {
+      const numericGroupId = groupId.trim();
+      if (!/^\d+$/.test(numericGroupId)) {
+        throw new BadRequestException(
+          'Invalid groupId: must be a numeric string (e.g., "123")',
+        );
+      }
+      parsedGroupId = parseInt(numericGroupId, 10);
+    }
+    return this.testsService.getStatistic(req.user, parsedGroupId);
+  }
 
   @Post()
   @UseInterceptors(

@@ -107,12 +107,46 @@ export class GroupsService {
     return this.prisma.group.delete({ where: { id } });
   }
 
-  async getGroups(user: User & { role: string }) {
-    if (user.role !== 'admin') {
-      throw new ForbiddenException('Only admins can view groups');
+  async getGroups(user: User & { role: string; userId: number }) {
+    if (user.role !== 'admin' && user.role !== 'teacher') {
+      throw new ForbiddenException('Only admins and teachers can view groups');
+    }
+
+    if (user.role === 'admin') {
+      return this.prisma.group.findMany({
+        include: { subjects: { include: { subject: true } } },
+        orderBy: { name: 'asc' },
+      });
+    }
+
+    // For teacher: get groups with subjects they teach
+    const teacher = await this.prisma.teacher.findUnique({
+      where: { userId: user.userId },
+    });
+
+    if (!teacher) {
+      throw new ForbiddenException('Teacher not found');
+    }
+
+    const teacherSubjects = await this.prisma.teacherSubject.findMany({
+      where: { teacherId: teacher.id },
+      select: { subjectId: true },
+    });
+
+    const subjectIds = teacherSubjects.map((ts) => ts.subjectId);
+
+    if (subjectIds.length === 0) {
+      return []; // No subjects, no groups
     }
 
     return this.prisma.group.findMany({
+      where: {
+        subjects: {
+          some: {
+            subjectId: { in: subjectIds },
+          },
+        },
+      },
       include: { subjects: { include: { subject: true } } },
       orderBy: { name: 'asc' },
     });

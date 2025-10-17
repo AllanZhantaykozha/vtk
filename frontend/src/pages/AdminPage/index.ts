@@ -1,1 +1,2 @@
-export { AdminPage } from "./AdminPage";
+export { CreatePage } from "./CreatePage";
+export { DashboardPage } from "./DashboardPage";

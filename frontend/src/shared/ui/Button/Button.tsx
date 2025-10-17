@@ -16,7 +16,7 @@ interface ButtonDto {
   isLink?: boolean;
   className?: string;
   icon?: string;
-  onClick?: () => void;
+  onClick?: () => Promise<void>;
 }
 
 export function Button({
@@ -35,7 +35,7 @@ export function Button({
     <button
       onClick={onClick}
       className={cn(
-        "w-fit cursor-pointer py-2 px-5 text-center font-medium rounded-full flex items-center justify-center gap-2 transition",
+        "w-fit cursor-pointer py-2 px-4 text-center font-medium rounded-full flex items-center justify-center gap-2 transition",
         type === ButtonTypeEnum.BLACK
           ? "bg-[#303443] text-white"
           : type === ButtonTypeEnum.WHITE

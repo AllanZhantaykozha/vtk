@@ -52,7 +52,7 @@ export class GroupsController {
 
   // ---------- GETTERS ----------
 
-  @Roles('admin')
+  @Roles('admin', 'teacher')
   @Get()
   async getGroups(@Request() req) {
     return this.groupsService.getGroups(req.user);

@@ -3,6 +3,7 @@
 import { Select } from "@/src/shared/ui/Select";
 import { TeacherListIsland } from "@/src/widgets/AdminPage";
 import { ProgressIsland } from "@/src/widgets/AdminPage/ProgressIsland";
+import { Header } from "@/src/widgets/Header";
 import { NotificationIsland } from "@/src/widgets/NotificationIsland";
 import { NotificationIslandEnum } from "@/src/widgets/NotificationIsland/NotificationIsland";
 import { Sidebar } from "@/src/widgets/Sidebar";
@@ -62,11 +63,10 @@ const notification = [
   },
 ];
 
-export function AdminPage() {
+export function DashboardPage() {
   return (
-    <div className="flex m-5 gap-5 container mx-auto">
-      <Sidebar />
-      <div className="grid grid-flow-col gap-5">
+    <div className="flex gap-5 container mx-auto">
+      <div className="grid grid-cols-[2fr_1fr] gap-5 w-full">
         <ProgressIsland />
         <div className="gap-5 grid h-fit">
           <NotificationIsland data={notification} />
