@@ -1,6 +1,8 @@
-import { Group } from "@/components/types/group.type";
-import { Test, Lecture, Subject } from "@/components/types/subject.type";
-import { TestSubmission } from "../../Test/types";
+import { Test, TestSubmission } from "../../Test/types";
+import { AppNotification } from "../../Notification/types";
+import { Group } from "../../Group/types";
+import { Lecture } from "../../Lecture/types";
+import { Subject } from "../../Subject/types";
 
 export type NotificationStatus = "LOW" | "MEDIUM" | "HIGH";
 export type TestSubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -12,10 +14,11 @@ export interface User {
   fullName: string;
   createdAt: Date;
   updatedAt: Date;
+  photoUrl?: string;
   teacher?: Teacher;
   student?: Student;
   admin?: Admin;
-  notifications: Notification[];
+  notifications: AppNotification[];
 }
 
 export interface Teacher {

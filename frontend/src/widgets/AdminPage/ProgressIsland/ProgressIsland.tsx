@@ -16,14 +16,14 @@ import { ProgressCartSkeleton } from "./Skeleton";
 
 export function ProgressIsland() {
   const { statistics, isLoading, fetchStatistic } = useStatisticStore();
-  const { groups, isLoadingGroup, fetchGroup } = useGroupStore();
+  const { groups, isLoadingGroup, fetchGroups } = useGroupStore();
   const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(
     undefined
   );
 
   useEffect(() => {
-    fetchGroup();
-  }, [fetchGroup]);
+    fetchGroups();
+  }, [fetchGroups]);
 
   useEffect(() => {
     fetchStatistic(
@@ -38,7 +38,7 @@ export function ProgressIsland() {
         <div className="text-white text-xl font-bold">Успеваемость</div>
         <Select
           data={groups || []}
-          selectedGroupId={selectedGroupId}
+          selectedId={selectedGroupId}
           onChange={setSelectedGroupId}
           className="w-[200px]"
         />

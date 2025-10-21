@@ -6,6 +6,14 @@ import { PrismaService } from 'prisma/prisma.service';
 export class TeacherService {
   constructor(private prisma: PrismaService) {}
 
+  async getAllTeachers(user: User & { userId: number }) {
+    return await this.prisma.teacher.findMany({
+      include: {
+        user: true,
+      },
+    });
+  }
+
   async getMyTests(
     user: User & { userId: number },
     filters: {

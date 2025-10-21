@@ -17,6 +17,13 @@ export class TeacherController {
   constructor(private readonly teacherService: TeacherService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('/get-all-teachers')
+  getAllTeachers(@Request() req) {
+    return this.teacherService.getAllTeachers(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher')
   @Get('/lectures')
   getMyLectures(

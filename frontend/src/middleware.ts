@@ -24,26 +24,25 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, secret);
 
       const role = payload.role as string | undefined;
+
       if (!role) throw new Error("Role not found");
 
-      // Запрет на доступ к /login, если уже вошёл
-      if (path === "/login") {
-        if (role === "teacher")
-          return NextResponse.redirect(new URL("/teacher", request.url));
-        if (role === "student")
-          return NextResponse.redirect(new URL("/student", request.url));
-        if (role === "admin")
-          return NextResponse.redirect(new URL("/admin", request.url));
+      if (path.startsWith("/teacher") && role !== "teacher") {
+        return NextResponse.redirect(
+          new URL(role === "admin" ? "/test" : "/student", request.url)
+        );
       }
 
-      // Teacher не может в /student
-      if (role === "teacher" && path.startsWith("/student")) {
-        return NextResponse.redirect(new URL("/teacher", request.url));
+      if (path.startsWith("/test") && role !== "admin") {
+        return NextResponse.redirect(
+          new URL(role === "teacher" ? "/teacher" : "/student", request.url)
+        );
       }
 
-      // Student не может в /teacher
-      if (role === "student" && path.startsWith("/teacher")) {
-        return NextResponse.redirect(new URL("/student", request.url));
+      if (path.startsWith("/student") && role !== "student") {
+        return NextResponse.redirect(
+          new URL(role === "teacher" ? "/teacher" : "/test", request.url)
+        );
       }
 
       // Admin доступ везде
@@ -65,6 +64,6 @@ export const config = {
     "/student/:path*",
     "/teacher/:path*",
     "/admin/:path*",
-    "/test",
+    "/test/:path*",
   ],
 };

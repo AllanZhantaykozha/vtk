@@ -48,9 +48,7 @@ export class UsersService implements OnModuleInit {
         student: {
           select: {
             group: {
-              select: {
-                name: true,
-              },
+              select: { id: true, name: true },
             },
           },
         },

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Mulish } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const font = Mulish({
   subsets: ["latin", "cyrillic"],
@@ -18,7 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${font.className} bg-[#dae2ed]`}>{children}</body>
+      <body className={`${font.className} bg-[#dae2ed]`}>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

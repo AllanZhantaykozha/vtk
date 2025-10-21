@@ -20,7 +20,7 @@ export default function AdminLayout({
   return (
     <div className="flex m-5 gap-5 container mx-auto">
       <Sidebar />
-      <div className="grid gap-5 w-full">
+      <div className="w-full gap-5 flex flex-col">
         <Header />
         <div className="grid grid-flow-col gap-5">{children}</div>
       </div>

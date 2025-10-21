@@ -19,7 +19,7 @@ export function Island({
 }) {
   return (
     <div
-      className={` ${cn(className)}
+      className={`flex flex-col ${cn(className)}
         rounded-4xl ${
           theme === IslandThemeEnum.BLUE
             ? "bg-[#589cff]"
@@ -43,11 +43,7 @@ export function IslandContent({
   children: React.ReactNode;
   className?: string;
 }>) {
-  return (
-    <div className={`p-6 overflow-hidden z-10 ${cn(className)}`}>
-      {children}
-    </div>
-  );
+  return <div className={`p-6 z-10 h-full  ${cn(className)}`}>{children}</div>;
 }
 
 export function IslandHeader({

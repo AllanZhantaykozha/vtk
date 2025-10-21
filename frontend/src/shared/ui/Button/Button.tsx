@@ -17,6 +17,7 @@ interface ButtonDto {
   className?: string;
   icon?: string;
   onClick?: () => Promise<void>;
+  disabled?: boolean;
 }
 
 export function Button({
@@ -26,6 +27,7 @@ export function Button({
   className,
   icon,
   onClick,
+  disabled,
 }: ButtonDto) {
   const IconComponent = icon
     ? (Icons[icon as keyof typeof Icons] as ElementType)
@@ -33,6 +35,7 @@ export function Button({
 
   return (
     <button
+      disabled={disabled}
       onClick={onClick}
       className={cn(
         "w-fit cursor-pointer py-2 px-4 text-center font-medium rounded-full flex items-center justify-center gap-2 transition",

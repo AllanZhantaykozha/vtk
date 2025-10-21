@@ -46,7 +46,7 @@ export function Header() {
             alt="photo"
             className="rounded-full aspect-square"
           />
-          <div className="font-semibold text-lg">
+          <div className="font-semibold text-lg select-none">
             {shortFullname(user?.fullName || "")}
           </div>
         </div>

@@ -1,11 +1,12 @@
-import { User } from "../User/types/types";
+import { User } from "../User/types";
+import { NotificationStatus } from "../User/types/types";
 
-export interface Notification {
+export interface AppNotification {
   id: number;
   userId: number;
   user: User;
   text: string;
-  status: Notification;
+  status: NotificationStatus;
   createdAt: Date;
   read: boolean;
 }

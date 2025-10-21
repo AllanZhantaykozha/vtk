@@ -1,5 +1,6 @@
 "use client";
 
+import { useTeachersStore } from "@/src/shared/lib/stores/teachersStore";
 import { Button, ButtonTypeEnum } from "@/src/shared/ui/Button/Button";
 import { Icon, IconThemeEnum } from "@/src/shared/ui/Icon/Icon";
 import {
@@ -9,15 +10,21 @@ import {
   IslandThemeEnum,
 } from "@/src/shared/ui/Island/Island";
 import Image from "next/image";
+import { useEffect } from "react";
+import { TeacherListIslandSkeleton } from "./Skeleton";
+import { Teacher } from "@/src/entities/User/types";
 
-interface TeacherListIslandDto {
-  fullName: string;
-  imageUrl: string;
-}
+export function TeacherListIsland() {
+  const { teachers, isLoading, fetchTeachers } = useTeachersStore();
 
-export function TeacherListIsland({ data }: { data: TeacherListIslandDto[] }) {
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  if (isLoading) return <TeacherListIslandSkeleton />;
+
   return (
-    <Island className="w-[500px] h-fit" theme={IslandThemeEnum.WHITE}>
+    <Island className="w-full h-[240px]" theme={IslandThemeEnum.WHITE}>
       <IslandHeader>
         <Icon icon="User" theme={IconThemeEnum.BLACK} />
         <div className="text-black text-xl font-bold">Преподаватели</div>
@@ -33,19 +40,19 @@ export function TeacherListIsland({ data }: { data: TeacherListIslandDto[] }) {
               snap-x snap-mandatory
             "
           >
-            {data.map((obj) => (
+            {teachers?.map((obj: Teacher) => (
               <div
-                key={obj.fullName}
+                key={obj.id}
                 className="snap-center flex-shrink-0 w-20 grid gap-2"
               >
                 <Image
                   className="aspect-square w-20 rounded-full object-cover"
-                  src={obj.imageUrl}
+                  src={obj.user.photoUrl || "/photo.jpg"}
                   width={100}
                   height={100}
-                  alt={obj.fullName}
+                  alt={obj.user.fullName}
                 />
-                <div className="text-center">{obj.fullName}</div>
+                <div className="text-center">{obj.user.fullName}</div>
               </div>
             ))}
           </div>

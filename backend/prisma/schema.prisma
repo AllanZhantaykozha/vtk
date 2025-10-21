@@ -1,55 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-enum NotificationStatus {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum TestSubmissionStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model User {
-  id        Int      @id @default(autoincrement())
-  login     String   @unique
-  password  String
-  fullName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  teacher       Teacher?       @relation("UserToTeacher")
-  student       Student?       @relation("UserToStudent")
+  id            Int            @id @default(autoincrement())
+  login         String         @unique
+  password      String
+  fullName      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   admin         Admin?         @relation("UserToAdmin")
   notifications Notification[]
+  student       Student?       @relation("UserToStudent")
+  teacher       Teacher?       @relation("UserToTeacher")
 
   @@index([login])
 }
 
 model Teacher {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique
-  user   User @relation("UserToTeacher", fields: [userId], references: [id], onDelete: Cascade)
-
+  id       Int              @id @default(autoincrement())
+  userId   Int              @unique
+  lectures Lecture[]        @relation("TeacherLectures")
+  user     User             @relation("UserToTeacher", fields: [userId], references: [id], onDelete: Cascade)
   subjects TeacherSubject[] @relation("TeacherSubjects")
   tests    Test[]           @relation("TeacherTests")
-  lectures Lecture[]        @relation("TeacherLectures")
 }
 
 model Student {
   id          Int              @id @default(autoincrement())
   userId      Int              @unique
-  groupId     Int? // Nullable to allow students without a group
-  group       Group?           @relation("GroupStudents", fields: [groupId], references: [id], onDelete: SetNull)
+  groupId     Int?
+  group       Group?           @relation("GroupStudents", fields: [groupId], references: [id])
   user        User             @relation("UserToStudent", fields: [userId], references: [id], onDelete: Cascade)
   submissions TestSubmission[] @relation("StudentSubmissions")
 }
@@ -61,13 +47,12 @@ model Admin {
 }
 
 model Subject {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
+  id       Int              @id @default(autoincrement())
+  name     String           @unique
   groups   GroupSubject[]   @relation("GroupSubjects")
+  lectures Lecture[]        @relation("LectureSubject")
   teachers TeacherSubject[] @relation("TeacherSubjects")
   tests    Test[]           @relation("TestSubject")
-  lectures Lecture[]        @relation("LectureSubject")
 
   @@index([name])
 }
@@ -85,7 +70,7 @@ model GroupSubject {
   groupId   Int
   subjectId Int
   group     Group   @relation("GroupSubjects", fields: [groupId], references: [id], onDelete: Cascade)
-  subject   Subject @relation("GroupSubjects", fields: [subjectId], references: [id], onDelete: Restrict)
+  subject   Subject @relation("GroupSubjects", fields: [subjectId], references: [id])
 
   @@id([groupId, subjectId])
   @@index([subjectId])
@@ -94,8 +79,8 @@ model GroupSubject {
 model TeacherSubject {
   teacherId Int
   subjectId Int
+  subject   Subject @relation("TeacherSubjects", fields: [subjectId], references: [id])
   teacher   Teacher @relation("TeacherSubjects", fields: [teacherId], references: [id], onDelete: Cascade)
-  subject   Subject @relation("TeacherSubjects", fields: [subjectId], references: [id], onDelete: Restrict)
 
   @@id([teacherId, subjectId])
   @@index([subjectId])
@@ -106,11 +91,11 @@ model Test {
   title       String
   description String?
   subjectId   Int
-  subject     Subject          @relation("TestSubject", fields: [subjectId], references: [id], onDelete: Restrict)
   teacherId   Int
-  teacher     Teacher          @relation("TeacherTests", fields: [teacherId], references: [id], onDelete: Cascade)
   uploadDate  DateTime         @default(now())
   questions   Question[]       @relation("TestQuestions")
+  subject     Subject          @relation("TestSubject", fields: [subjectId], references: [id])
+  teacher     Teacher          @relation("TeacherTests", fields: [teacherId], references: [id], onDelete: Cascade)
   submissions TestSubmission[] @relation("TestSubmissions")
 
   @@index([subjectId, teacherId])
@@ -119,12 +104,12 @@ model Test {
 model Question {
   id      Int      @id @default(autoincrement())
   testId  Int
-  test    Test     @relation("TestQuestions", fields: [testId], references: [id], onDelete: Cascade)
   text    String
   image   String?
   type    String   @default("single")
+  correct Int[]
   options Option[] @relation("QuestionOptions")
-  correct Int[] // 
+  test    Test     @relation("TestQuestions", fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([testId])
 }
@@ -132,8 +117,8 @@ model Question {
 model Option {
   id         Int      @id @default(autoincrement())
   questionId Int
-  question   Question @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
   text       String
+  question   Question @relation("QuestionOptions", fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
 }
@@ -141,13 +126,13 @@ model Option {
 model TestSubmission {
   id          Int                  @id @default(autoincrement())
   testId      Int
-  test        Test                 @relation("TestSubmissions", fields: [testId], references: [id], onDelete: Cascade)
   studentId   Int
-  student     Student              @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
   answers     Json
   score       Int
   submittedAt DateTime             @default(now())
   status      TestSubmissionStatus @default(PENDING)
+  student     Student              @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  test        Test                 @relation("TestSubmissions", fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([testId, studentId])
 }
@@ -156,12 +141,12 @@ model Lecture {
   id          Int      @id @default(autoincrement())
   title       String
   subjectId   Int
-  subject     Subject  @relation("LectureSubject", fields: [subjectId], references: [id], onDelete: Restrict)
   teacherId   Int
-  teacher     Teacher  @relation("TeacherLectures", fields: [teacherId], references: [id], onDelete: Cascade)
   description String
   uploadDate  DateTime @default(now())
   fileContent Bytes
+  subject     Subject  @relation("LectureSubject", fields: [subjectId], references: [id])
+  teacher     Teacher  @relation("TeacherLectures", fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@index([subjectId, teacherId])
 }
@@ -169,12 +154,24 @@ model Lecture {
 model Notification {
   id        Int                @id @default(autoincrement())
   userId    Int
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   text      String
   status    NotificationStatus
   createdAt DateTime           @default(now())
   read      Boolean            @default(false)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
+}
+
+enum NotificationStatus {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TestSubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
