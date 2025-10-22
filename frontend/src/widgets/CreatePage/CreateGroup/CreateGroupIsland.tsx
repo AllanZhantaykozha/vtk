@@ -7,34 +7,47 @@ import { useGroupStore } from "@/src/shared/lib/stores";
 import { CreateIslandSkeleton } from "../Skeleton";
 import { toast } from "sonner";
 import { CreateGroupList } from "./CreateGroupList";
+import { updateGroup } from "@/src/entities/Group/api";
 
 export function CreateGroupIsland() {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const { isLoadingGroup, fetchGroups } = useGroupStore();
-  const { subjects, isLoadingSubjects, fetchSubjects } = useSubjectStore();
+  const { subjects, isLoadingSubject, fetchSubject } = useSubjectStore();
   const { createGroup } = useGroupStore();
+  const [updateId, setUpdateId] = useState<number>(0);
 
   const [initialEditData, setInitialEditData] = useState<GroupFormData>({
     name: "",
     subjectIds: [],
   });
 
-  const handleEdit = (data: GroupFormData) => {
+  const handleEdit = (id: number, data: GroupFormData) => {
     setInitialEditData(data);
+    setUpdateId(id);
     setIsEditMode(true);
   };
 
   useEffect(() => {
     fetchGroups();
-    fetchSubjects();
+    fetchSubject();
   }, []);
 
-  const handleCreate = async (newGroup: GroupFormData) => {
-    await createGroup(newGroup);
+  const handleCreate = async (
+    newGroup: GroupFormData,
+    type: "CREATE" | "UPDATE"
+  ) => {
+    if (type === "CREATE") {
+      await createGroup(newGroup);
+      toast.success("Группа создан");
+      fetchGroups();
+    }
 
-    toast.success("Группа создана");
-    fetchGroups();
+    if (type === "UPDATE") {
+      await updateGroup(updateId, newGroup);
+      toast.success("Группа изменена");
+      fetchGroups();
+    }
 
     setInitialEditData({
       name: "",
@@ -53,7 +66,7 @@ export function CreateGroupIsland() {
     });
   };
 
-  if (isLoadingSubjects || isLoadingGroup)
+  if (isLoadingSubject || isLoadingGroup)
     return <CreateIslandSkeleton title="Управление группами" />;
   return (
     <div className="p-3">

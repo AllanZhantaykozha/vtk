@@ -1,12 +1,25 @@
-import { getNotifications } from "@/src/entities/Notification/api";
+import {
+  createNotification,
+  deleteNotification,
+  getNotifications,
+  updateNotification,
+} from "@/src/entities/Notification/api";
+import { AppNotification } from "@/src/entities/Notification/types";
+import { NotificationFormData } from "@/src/widgets/CreatePage/CreateForm";
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 
 interface NotificationState {
-  notifications: Notification[] | null;
-  isLoading: boolean;
+  notifications: AppNotification[] | null;
+  isLoadingNotification: boolean;
 
   fetchNotifications: () => Promise<void>;
+  createNotification: (notificationData: NotificationFormData) => Promise<void>;
+  updateNotification: (
+    id: number,
+    notificationData: Partial<Notification>
+  ) => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
 }
 
 export const useNotificationStore = create<NotificationState>()(
@@ -17,10 +30,10 @@ export const useNotificationStore = create<NotificationState>()(
         isLoading: false,
 
         fetchNotifications: async () => {
-          const { isLoading } = get();
-          if (isLoading) return;
+          const { isLoadingNotification } = get();
+          if (isLoadingNotification) return;
 
-          set({ isLoading: true });
+          set({ isLoadingNotification: true });
 
           try {
             const data = await getNotifications();
@@ -34,7 +47,70 @@ export const useNotificationStore = create<NotificationState>()(
             console.error("Error in fetchStatistic:", error);
             set({ notifications: null });
           } finally {
-            set({ isLoading: false });
+            set({ isLoadingNotification: false });
+          }
+        },
+
+        createNotification: async (NotificationData: NotificationFormData) => {
+          const { isLoadingNotification } = get();
+          if (isLoadingNotification) return;
+
+          set({ isLoadingNotification: true });
+
+          try {
+            const result = await createNotification(NotificationData);
+            if (typeof result === "string") {
+              console.error("Create Notification error:", result);
+              return;
+            }
+            await get().fetchNotifications();
+          } catch (error) {
+            console.error("Error in createNotification:", error);
+          } finally {
+            set({ isLoadingNotification: false });
+          }
+        },
+
+        updateNotification: async (
+          id: number,
+          NotificationData: Partial<NotificationFormData>
+        ) => {
+          const { isLoadingNotification } = get();
+          if (isLoadingNotification) return;
+
+          set({ isLoadingNotification: true });
+
+          try {
+            const result = await updateNotification(id, NotificationData);
+            if (typeof result === "string") {
+              console.error("Update Notification error:", result);
+              return;
+            }
+            await get().fetchNotifications();
+          } catch (error) {
+            console.error("Error in update Notification:", error);
+          } finally {
+            set({ isLoadingNotification: false });
+          }
+        },
+
+        deleteNotification: async (id: number) => {
+          const { isLoadingNotification } = get();
+          if (isLoadingNotification) return;
+
+          set({ isLoadingNotification: true });
+
+          try {
+            const result = await deleteNotification(id);
+            if (typeof result === "string") {
+              console.error("Delete Notification error:", result);
+              return;
+            }
+            await get().fetchNotifications();
+          } catch (error) {
+            console.error("Error in delete Notification:", error);
+          } finally {
+            set({ isLoadingNotification: false });
           }
         },
       }),

@@ -429,7 +429,7 @@ export class TestsService {
 
     return this.prisma.$transaction(async (prisma) => {
       // Update test
-      const updatedTest = await prisma.test.update({
+      await prisma.test.update({
         where: { id: Number(id) },
         data: {
           title: dto.title,
@@ -600,7 +600,9 @@ export class TestsService {
 
     await this.prisma.notification.create({
       data: {
-        userId: test.teacher.user.id,
+        users: {
+          connect: [{ id: test.teacher.user.id }],
+        },
         text: `Студент группы ${student.group.name} ${student.user.fullName} прошел тест номер ${test.id} на ${grade}%`,
         status: 'LOW',
       },
@@ -680,7 +682,9 @@ export class TestsService {
 
     await this.prisma.notification.create({
       data: {
-        userId: userIdToNotification.userId,
+        users: {
+          connect: [{ id: userIdToNotification.userId }],
+        },
         text: `Результат теста №${submission.id}: ${status === 'APPROVED' ? 'Одобрен' : 'Отклонён'}`,
         status: 'MEDIUM',
       },

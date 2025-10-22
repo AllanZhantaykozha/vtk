@@ -14,7 +14,7 @@ export function CreateUserIsland() {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const { groups, isLoadingGroup, fetchGroups } = useGroupStore();
-  const { subjects, isLoadingSubjects, fetchSubjects } = useSubjectStore();
+  const { subjects, isLoadingSubject, fetchSubject } = useSubjectStore();
   const { createUser, fetchUsers } = useUsersStore();
 
   const [initialEditData, setInitialEditData] = useState<UserFormData>({
@@ -36,7 +36,7 @@ export function CreateUserIsland() {
 
   useEffect(() => {
     fetchGroups();
-    fetchSubjects();
+    fetchSubject();
   }, []);
 
   const handleCreate = async (
@@ -78,7 +78,7 @@ export function CreateUserIsland() {
     });
   };
 
-  if (isLoadingSubjects || isLoadingGroup)
+  if (isLoadingSubject || isLoadingGroup)
     return <CreateIslandSkeleton title="Управление пользователями" />;
   return (
     <div className="p-3">

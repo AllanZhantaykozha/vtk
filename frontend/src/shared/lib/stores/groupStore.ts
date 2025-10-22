@@ -1,9 +1,9 @@
-import { getGroups } from "@/src/entities/Group/api";
 import {
   createGroup,
-  deleteGroup,
   updateGroup,
-} from "@/src/entities/Group/api/mutations";
+  deleteGroup,
+} from "@/src/entities/Group/api";
+import { getGroups } from "@/src/entities/Group/api/queries";
 import { Group } from "@/src/entities/Group/types";
 import { GroupFormData } from "@/src/widgets/CreatePage/CreateForm";
 import { create } from "zustand";

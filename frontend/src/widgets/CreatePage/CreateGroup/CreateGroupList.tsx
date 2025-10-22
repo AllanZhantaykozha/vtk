@@ -11,7 +11,7 @@ import { useGroupStore } from "@/src/shared/lib/stores";
 export function CreateGroupList({
   onClickEdit,
 }: {
-  onClickEdit: (group: GroupFormData) => void;
+  onClickEdit: (id: number, group: GroupFormData) => void;
 }) {
   const { groups, isLoadingGroup, fetchGroups } = useGroupStore();
   const { deleteGroup } = useGroupStore();
@@ -27,8 +27,8 @@ export function CreateGroupList({
     }
   };
 
-  const handleEdit = (group: GroupFormData) => {
-    onClickEdit(group);
+  const handleEdit = (id: number, group: GroupFormData) => {
+    onClickEdit(id, group);
   };
 
   if (isLoadingGroup || !groups) return <CreateListSkeleton />;
@@ -71,7 +71,7 @@ export function CreateGroupList({
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() =>
-                      handleEdit({
+                      handleEdit(obj.id, {
                         name: obj.name,
                         subjectIds:
                           obj.subjects.map((obj) => obj.subject.id) || [],

@@ -3,8 +3,8 @@ import { NotificationStatus } from "../User/types/types";
 
 export interface AppNotification {
   id: number;
-  userId: number;
-  user: User;
+  userIds: number[];
+  users: User[];
   text: string;
   status: NotificationStatus;
   createdAt: Date;

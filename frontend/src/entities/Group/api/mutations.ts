@@ -1,7 +1,7 @@
 import { API } from "@/src/app/api/client";
 import { ROUTES } from "@/src/app/api/routes";
 import { GroupFormData } from "@/src/widgets/CreatePage/CreateForm";
-import { Group } from "../types";
+import { Group } from "../../Group/types";
 
 export async function createGroup(
   groupData: GroupFormData

@@ -15,7 +15,7 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   admin         Admin?         @relation("UserToAdmin")
-  notifications Notification[]
+  notifications Notification[] @relation("UserNotifications")
   student       Student?       @relation("UserToStudent")
   teacher       Teacher?       @relation("UserToTeacher")
 
@@ -70,7 +70,7 @@ model GroupSubject {
   groupId   Int
   subjectId Int
   group     Group   @relation("GroupSubjects", fields: [groupId], references: [id], onDelete: Cascade)
-  subject   Subject @relation("GroupSubjects", fields: [subjectId], references: [id])
+  subject   Subject @relation("GroupSubjects", fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@id([groupId, subjectId])
   @@index([subjectId])
@@ -79,7 +79,7 @@ model GroupSubject {
 model TeacherSubject {
   teacherId Int
   subjectId Int
-  subject   Subject @relation("TeacherSubjects", fields: [subjectId], references: [id])
+  subject   Subject @relation("TeacherSubjects", fields: [subjectId], references: [id], onDelete: Cascade)
   teacher   Teacher @relation("TeacherSubjects", fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@id([teacherId, subjectId])
@@ -94,7 +94,7 @@ model Test {
   teacherId   Int
   uploadDate  DateTime         @default(now())
   questions   Question[]       @relation("TestQuestions")
-  subject     Subject          @relation("TestSubject", fields: [subjectId], references: [id])
+  subject     Subject          @relation("TestSubject", fields: [subjectId], references: [id], onDelete: Cascade)
   teacher     Teacher          @relation("TeacherTests", fields: [teacherId], references: [id], onDelete: Cascade)
   submissions TestSubmission[] @relation("TestSubmissions")
 
@@ -145,7 +145,7 @@ model Lecture {
   description String
   uploadDate  DateTime @default(now())
   fileContent Bytes
-  subject     Subject  @relation("LectureSubject", fields: [subjectId], references: [id])
+  subject     Subject  @relation("LectureSubject", fields: [subjectId], references: [id], onDelete: Cascade)
   teacher     Teacher  @relation("TeacherLectures", fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@index([subjectId, teacherId])
@@ -153,14 +153,13 @@ model Lecture {
 
 model Notification {
   id        Int                @id @default(autoincrement())
-  userId    Int
   text      String
   status    NotificationStatus
   createdAt DateTime           @default(now())
   read      Boolean            @default(false)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  users User[] @relation("UserNotifications")
+
   @@index([status])
 }
 

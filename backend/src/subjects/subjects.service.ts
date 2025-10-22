@@ -103,6 +103,11 @@ export class SubjectsService {
             title: true,
           },
         },
+        groups: {
+          select: {
+            group: true,
+          },
+        },
       },
     });
   }
@@ -239,6 +244,8 @@ export class SubjectsService {
     if (!existing) {
       throw new NotFoundException(`Subject with ID ${id} not found`);
     }
+
+    console.log(id, user);
 
     return this.prisma.subject.delete({ where: { id } });
   }

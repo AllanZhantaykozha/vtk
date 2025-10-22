@@ -82,6 +82,9 @@ export const ROUTES = {
   },
   notification: {
     getNotification: { path: `/notification`, method: "GET" },
+    create: { path: `/notification/create/`, method: "POST" },
+    update: { path: `/notification/update/`, method: "PATCH" },
+    delete: { path: `/notification/delete/`, method: "DELETE" },
   },
 } as const satisfies Record<string, Record<string, RouteConfig>>;
 
