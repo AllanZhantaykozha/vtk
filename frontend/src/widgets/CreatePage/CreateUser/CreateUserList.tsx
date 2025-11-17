@@ -1,7 +1,7 @@
 "use client";
 
 import { useUsersStore } from "@/src/shared/lib/stores/usersStore";
-import React from "react";
+import React, { useEffect } from "react";
 import { CreateListSkeleton } from "../Skeleton";
 import { User } from "@/src/entities/User/types";
 import { Pencil, Trash } from "lucide-react";
@@ -15,6 +15,10 @@ export function CreateUserList({
 }) {
   const { users, isLoading, fetchUsers } = useUsersStore();
   const { deleteUser } = useUsersStore();
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleDelete = async (userId: number) => {
     try {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTeachersStore } from "@/src/shared/lib/stores/teachersStore";
-import { Button, ButtonTypeEnum } from "@/src/shared/ui/Button/Button";
+import { Button, ButtonVariantEnum } from "@/src/shared/ui/Button/Button";
 import { Icon, IconThemeEnum } from "@/src/shared/ui/Icon/Icon";
 import {
   Island,
@@ -15,20 +15,20 @@ import { TeacherListIslandSkeleton } from "./Skeleton";
 import { Teacher } from "@/src/entities/User/types";
 
 export function TeacherListIsland() {
-  const { teachers, isLoading, fetchTeachers } = useTeachersStore();
+  const { teachers, isLoadingTeachers, fetchTeachers } = useTeachersStore();
 
   useEffect(() => {
     fetchTeachers();
   }, []);
 
-  if (isLoading) return <TeacherListIslandSkeleton />;
+  if (isLoadingTeachers) return <TeacherListIslandSkeleton />;
 
   return (
     <Island className="w-full h-[240px]" theme={IslandThemeEnum.WHITE}>
       <IslandHeader>
         <Icon icon="User" theme={IconThemeEnum.BLACK} />
         <div className="text-black text-xl font-bold">Преподаватели</div>
-        <Button isLink type={ButtonTypeEnum.GRAY} />
+        <Button isLink variant={ButtonVariantEnum.GRAY} />
       </IslandHeader>
       <IslandContent className="grid grid-flow-col gap-5">
         <div className="overflow-x-auto custom-scroll pb-2">

@@ -1,14 +1,20 @@
-import { getNotifications } from "@/src/entities/Notification/api";
 import { getTeachers } from "@/src/entities/User/api";
+import { TeachersParams } from "@/src/entities/User/api/queries";
 import { Teacher } from "@/src/entities/User/types";
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 
 interface TeachersState {
   teachers: Teacher[] | null;
-  isLoading: boolean;
+  isLoadingTeachers: boolean;
 
-  fetchTeachers: () => Promise<void>;
+  fetchTeachers: (filters?: TeachersParams) => Promise<void>;
+  // createTeachers: (TeachersData: TeachersFormData) => Promise<void>;
+  // updateTeachers: (
+  //   id: number,
+  //   TeachersData: Partial<TeachersFormData>
+  // ) => Promise<void>;
+  deleteTeachers: (id: number) => Promise<void>;
 }
 
 export const useTeachersStore = create<TeachersState>()(
@@ -16,16 +22,16 @@ export const useTeachersStore = create<TeachersState>()(
     devtools(
       (set, get) => ({
         statistics: null,
-        isLoading: false,
+        isLoadingTeachers: false,
 
-        fetchTeachers: async () => {
-          const { isLoading } = get();
-          if (isLoading) return;
+        fetchTeachers: async (filters?: TeachersParams) => {
+          const { isLoadingTeachers } = get();
+          if (isLoadingTeachers) return;
 
-          set({ isLoading: true });
+          set({ isLoadingTeachers: true });
 
           try {
-            const data = await getTeachers();
+            const data = await getTeachers(filters);
             if (typeof data === "string") {
               console.error("Statistic fetch error:", data);
               set({ teachers: null });
@@ -36,7 +42,7 @@ export const useTeachersStore = create<TeachersState>()(
             console.error("Error in fetchStatistic:", error);
             set({ teachers: null });
           } finally {
-            set({ isLoading: false });
+            set({ isLoadingTeachers: false });
           }
         },
       }),

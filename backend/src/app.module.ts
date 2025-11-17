@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { NotificationModule } from './notification/notification.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { join } from 'path';
     StudentModule,
     AdminModule,
     NotificationModule,
+    TasksModule,
   ],
 })
 export class AppModule {}

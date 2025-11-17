@@ -95,6 +95,17 @@ export class TestsService {
       }
     }
 
+    // Валидация deadline
+    if (dto.deadline) {
+      const deadlineDate = new Date(dto.deadline);
+      if (isNaN(deadlineDate.getTime())) {
+        throw new BadRequestException('Invalid deadline format');
+      }
+      if (deadlineDate <= new Date()) {
+        throw new BadRequestException('Deadline must be in the future');
+      }
+    }
+
     const subject = await this.prisma.subject.findUnique({
       where: { id: Number(dto.subjectId) },
       select: {
@@ -121,13 +132,16 @@ export class TestsService {
       g.group.students.map((s) => s.user.id),
     );
 
-    await this.prisma.notification.createMany({
-      data: userIds.map((userId) => ({
-        userId,
-        text: `По уроку ${subject.name} появился новый тест`,
-        status: 'LOW',
-      })),
-    });
+    // Уведомления создаются циклом, т.к. createMany не поддерживает connect
+    for (const id of userIds) {
+      await this.prisma.notification.create({
+        data: {
+          users: { connect: { id } },
+          text: `По уроку ${subject.name} появился новый тест`,
+          status: 'LOW',
+        },
+      });
+    }
 
     const imagesMap: Record<string, string> = {};
     if (files && files.length > 0) {
@@ -144,6 +158,7 @@ export class TestsService {
           description: dto.description || '',
           subjectId: Number(dto.subjectId),
           teacherId,
+          deadline: new Date(dto.deadline),
         },
       });
 
@@ -301,10 +316,25 @@ export class TestsService {
       };
     }
 
-    return this.prisma.test.findMany({
+    const tests = await this.prisma.test.findMany({
       where: Object.keys(where).length > 0 ? where : undefined,
       include,
       orderBy: { uploadDate: 'desc' },
+    });
+
+    // Добавляем информацию о deadline
+    const now = new Date();
+    return tests.map((test) => {
+      const isExpired = test.deadline ? test.deadline < now : false;
+      const timeRemaining = test.deadline
+        ? Math.max(0, test.deadline.getTime() - now.getTime())
+        : null;
+
+      return {
+        ...test,
+        isExpired,
+        timeRemaining,
+      };
     });
   }
 
@@ -342,11 +372,35 @@ export class TestsService {
       if (!student.group.subjects.some((s) => s.subjectId === test.subjectId)) {
         throw new ForbiddenException('You do not have access to this test');
       }
+
+      // Проверка на предыдущую сдачу теста
+      const studentSubmissions = test.submissions.filter(
+        (submission) => submission.studentId === student.id,
+      );
+      if (
+        studentSubmissions.some((submission) =>
+          ['PENDING', 'APPROVED'].includes(submission.status),
+        )
+      ) {
+        return {
+          status: studentSubmissions.map((obj) => obj.status)[0],
+        };
+      }
+      // Если статус rejected или нет submissions, продолжаем отдавать тест
     }
+
+    const now = new Date();
+    const isExpired = test.deadline ? test.deadline < now : false;
+    const timeRemaining = test.deadline
+      ? Math.max(0, test.deadline.getTime() - now.getTime())
+      : null;
 
     return {
       ...test,
       uploadDate: test.uploadDate.toISOString(),
+      deadline: test.deadline?.toISOString() || null,
+      isExpired,
+      timeRemaining,
     };
   }
 
@@ -405,6 +459,17 @@ export class TestsService {
       }
     }
 
+    // Валидация deadline при обновлении
+    if (dto.deadline) {
+      const deadlineDate = new Date(dto.deadline);
+      if (isNaN(deadlineDate.getTime())) {
+        throw new BadRequestException('Invalid deadline format');
+      }
+      if (deadlineDate <= new Date()) {
+        throw new BadRequestException('Deadline must be in the future');
+      }
+    }
+
     if (dto.questions && dto.questions.length > 0) {
       for (const question of dto.questions) {
         if (!question.options || question.options.length === 0) {
@@ -434,6 +499,7 @@ export class TestsService {
         data: {
           title: dto.title,
           description: dto.description,
+          deadline: dto.deadline ? new Date(dto.deadline) : undefined,
           subject: dto.subjectId
             ? { connect: { id: dto.subjectId } }
             : undefined,
@@ -555,6 +621,17 @@ export class TestsService {
       throw new NotFoundException(`Test with ID ${id} not found`);
     }
 
+    // Проверка deadline
+    if (test.deadline) {
+      const now = new Date();
+      if (test.deadline < now) {
+        const timeExpired = now.getTime() - test.deadline.getTime();
+        throw new ForbiddenException(
+          `Deadline для этого теста истёк. Тест был просрочен ${this.formatTimeAgo(timeExpired)} назад.`,
+        );
+      }
+    }
+
     if (!student.group.subjects.some((s) => s.subjectId === test.subjectId)) {
       throw new ForbiddenException('You do not have access to this test');
     }
@@ -616,6 +693,25 @@ export class TestsService {
         score,
       },
     });
+  }
+
+  // Вспомогательная функция для форматирования времени
+  private formatTimeAgo(milliseconds: number): string {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) {
+      return `${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'}`;
+    }
+    if (hours > 0) {
+      return `${hours} ${hours === 1 ? 'час' : hours < 5 ? 'часа' : 'часов'}`;
+    }
+    if (minutes > 0) {
+      return `${minutes} ${minutes === 1 ? 'минуту' : minutes < 5 ? 'минуты' : 'минут'}`;
+    }
+    return `${seconds} ${seconds === 1 ? 'секунду' : seconds < 5 ? 'секунды' : 'секунд'}`;
   }
 
   async updateSubmissionStatus(
@@ -700,14 +796,77 @@ export class TestsService {
     user: User & { role: string; userId: number },
     groupId?: number,
   ) {
-    if (user.role !== 'admin' && user.role !== 'teacher') {
-      throw new ForbiddenException(
-        'Only admins and teachers can view statistics',
-      );
-    }
-
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
+    // если студент — игнорируем groupId и берём только его тесты
+    if (user.role === 'student') {
+      const student = await this.prisma.student.findUnique({
+        where: { userId: user.userId },
+        include: { group: true },
+      });
+
+      if (!student) {
+        throw new ForbiddenException('User is not a registered student');
+      }
+
+      // собираем статистику по его попыткам за неделю
+      const submissions = await this.prisma.testSubmission.findMany({
+        where: {
+          studentId: student.id,
+          test: { uploadDate: { gte: weekAgo } },
+        },
+        include: {
+          test: {
+            include: {
+              subject: true,
+              questions: { select: { id: true } },
+            },
+          },
+        },
+      });
+
+      interface SubjectStat {
+        subjectName: string;
+        totalTests: number;
+        totalSubmissions: number;
+        totalGrade: number;
+      }
+
+      const subjectStats = new Map<number, SubjectStat>();
+
+      for (const sub of submissions) {
+        const subjectId = sub.test.subject.id;
+        const existing = subjectStats.get(subjectId) || {
+          subjectName: sub.test.subject.name,
+          totalTests: 0,
+          totalSubmissions: 0,
+          totalGrade: 0,
+        };
+
+        const numQuestions = sub.test.questions.length;
+        const grade = numQuestions > 0 ? (sub.score / numQuestions) * 100 : 0;
+
+        existing.totalTests += 1;
+        existing.totalSubmissions += 1;
+        existing.totalGrade += grade;
+
+        subjectStats.set(subjectId, existing);
+      }
+
+      // преобразуем в массив и считаем средний балл
+      return Array.from(subjectStats.values()).map((stat) => ({
+        groupName: student.group?.name ?? '—',
+        subjectName: stat.subjectName,
+        totalTests: stat.totalTests,
+        totalSubmissions: stat.totalSubmissions,
+        averageGrade:
+          stat.totalSubmissions > 0
+            ? Math.round(stat.totalGrade / stat.totalSubmissions)
+            : 0,
+      }));
+    }
+
+    // остальная логика — для преподавателей и админов
     const groupSubjects = await this.prisma.groupSubject.findMany({
       include: {
         group: true,
@@ -730,7 +889,6 @@ export class TestsService {
       );
     }
 
-    // Фильтрация по groupId, если предоставлен
     if (groupId !== undefined) {
       filteredGroupSubjects = filteredGroupSubjects.filter(
         (gs) => gs.group.id === groupId,

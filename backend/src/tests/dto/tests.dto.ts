@@ -10,6 +10,7 @@ import {
   ArrayNotEmpty,
   ValidateNested,
   IsObject,
+  IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PartialType } from '@nestjs/mapped-types';
@@ -67,6 +68,10 @@ export class CreateTestDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionDto)
   questions: QuestionDto[];
+
+  @IsString()
+  @IsNotEmpty()
+  deadline: string; // ISO date string
 }
 
 export class SubmitTestDto {

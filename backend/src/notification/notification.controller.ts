@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -24,8 +25,29 @@ export class NotificationController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getNotification(@Request() req) {
-    return this.notificationService.getNotification(req.user);
+  async getNotification(
+    @Request() req,
+    @Query('status') status?: string,
+    @Query('id') id?: number,
+    @Query('text') text?: string,
+    @Query('userId') userId?: number,
+    @Query('userType') userType?: 'teacher' | 'admin' | 'student' | 'all',
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('order') order?: 'asc' | 'desc',
+  ) {
+    return this.notificationService.getNotification(req.user, {
+      status,
+      text,
+      id: id ? Number(id) : undefined,
+      userId: userId ? Number(userId) : undefined,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+      userType,
+      sortBy,
+      order,
+    });
   }
 
   @Post('create')

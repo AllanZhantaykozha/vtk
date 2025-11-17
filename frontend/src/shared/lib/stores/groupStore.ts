@@ -3,7 +3,11 @@ import {
   updateGroup,
   deleteGroup,
 } from "@/src/entities/Group/api";
-import { getGroups } from "@/src/entities/Group/api/queries";
+import {
+  getAllGroups,
+  getGroupById,
+  GroupFilters,
+} from "@/src/entities/Group/api/queries";
 import { Group } from "@/src/entities/Group/types";
 import { GroupFormData } from "@/src/widgets/CreatePage/CreateForm";
 import { create } from "zustand";
@@ -13,7 +17,8 @@ interface GroupState {
   groups: Group[] | null;
   isLoadingGroup: boolean;
 
-  fetchGroups: (groupId?: string) => Promise<void>;
+  fetchGroupById: (groupId?: string) => Promise<void>;
+  fetchAllGroups: (filters?: GroupFilters) => Promise<void>;
   createGroup: (groupData: GroupFormData) => Promise<void>;
   updateGroup: (id: number, GroupData: Partial<Group>) => Promise<void>;
   deleteGroup: (id: number) => Promise<void>;
@@ -26,19 +31,41 @@ export const useGroupStore = create<GroupState>()(
         Groups: null,
         isLoadingGroup: false,
 
-        fetchGroups: async (groupId?: string) => {
+        fetchAllGroups: async (filters?: GroupFilters) => {
           const { isLoadingGroup } = get();
           if (isLoadingGroup) return; // Нет дубликатов
 
           set({ isLoadingGroup: true });
 
           try {
-            const data = await getGroups(groupId);
+            const data = await getAllGroups(filters);
             if (typeof data === "string") {
               console.error("Group fetch error:", data);
               set({ groups: null });
             } else {
               set({ groups: data });
+            }
+          } catch (error) {
+            console.error("Error in fetchGroup:", error);
+            set({ groups: null });
+          } finally {
+            set({ isLoadingGroup: false });
+          }
+        },
+
+        fetchGroupById: async (groupId: string) => {
+          const { isLoadingGroup } = get();
+          if (isLoadingGroup) return; // Нет дубликатов
+
+          set({ isLoadingGroup: true });
+
+          try {
+            const data = await getGroupById(groupId);
+            if (typeof data === "string") {
+              console.error("Group fetch error:", data);
+              set({ groups: null });
+            } else {
+              set({ groups: [data] });
             }
           } catch (error) {
             console.error("Error in fetchGroup:", error);
@@ -60,7 +87,7 @@ export const useGroupStore = create<GroupState>()(
               console.error("Create group error:", result);
               return;
             }
-            await get().fetchGroups();
+            await get().fetchAllGroups();
           } catch (error) {
             console.error("Error in createGroup:", error);
           } finally {
@@ -80,7 +107,7 @@ export const useGroupStore = create<GroupState>()(
               console.error("Update Group error:", result);
               return;
             }
-            await get().fetchGroups();
+            await get().fetchAllGroups();
           } catch (error) {
             console.error("Error in update group:", error);
           } finally {
@@ -100,7 +127,7 @@ export const useGroupStore = create<GroupState>()(
               console.error("Delete Group error:", result);
               return;
             }
-            await get().fetchGroups();
+            await get().fetchAllGroups();
           } catch (error) {
             console.error("Error in delete group:", error);
           } finally {

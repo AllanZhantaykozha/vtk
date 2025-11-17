@@ -6,11 +6,69 @@ import { PrismaService } from 'prisma/prisma.service';
 export class TeacherService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllTeachers(user: User & { userId: number }) {
+  async getAllTeachers(filters?: {
+    id?: number;
+    login?: string;
+    fullName?: string;
+    subjectsId?: string;
+    sortBy?: string;
+    order?: 'asc' | 'desc';
+  }) {
+    const where: any = {};
+
+    if (filters?.id) where.user = { id: Number(filters.id) };
+    if (filters?.login)
+      where.user = {
+        ...where.user,
+        login: { contains: filters.login, mode: 'insensitive' },
+      };
+    if (filters?.fullName)
+      where.user = {
+        ...where.user,
+        fullName: { contains: filters.fullName, mode: 'insensitive' },
+      };
+
+    if (filters?.subjectsId && filters?.subjectsId.length > 0) {
+      const subjectsId = filters?.subjectsId?.split(',').map(Number);
+
+      where.subjects = {
+        some: {
+          subjectId: { in: subjectsId },
+        },
+      };
+    }
+
+    const validSortFields = ['id', 'fullName', 'login'] as const;
+    const sortField = validSortFields.includes(filters?.sortBy as any)
+      ? (filters!.sortBy as (typeof validSortFields)[number])
+      : 'id';
+
+    const sortOrder: 'asc' | 'desc' = filters?.order ?? 'desc';
+
+    // сортировка по вложенным полям
+    const orderBy =
+      sortField === 'fullName' || sortField === 'login'
+        ? { user: { [sortField]: sortOrder } }
+        : { [sortField]: sortOrder };
+
     return await this.prisma.teacher.findMany({
-      include: {
-        user: true,
+      where,
+      select: {
+        id: true,
+        subjects: {
+          select: {
+            subject: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            login: true,
+          },
+        },
       },
+      orderBy,
     });
   }
 

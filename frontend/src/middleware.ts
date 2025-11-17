@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
   if (token) {
     try {
       const secret = new TextEncoder().encode(
-        process.env.JWT_SECRET || "vtk#education123123"
+        process.env.JWT_SECRET || "vtk#education123123" // В продакшене используйте только env var без fallback
       );
       const { payload } = await jwtVerify(token, secret);
 
@@ -27,13 +27,25 @@ export async function middleware(request: NextRequest) {
 
       if (!role) throw new Error("Role not found");
 
+      // Редирект после логина на основе роли
+      if (path.startsWith("/login")) {
+        const redirectPath =
+          role === "admin"
+            ? "/admin"
+            : role === "teacher"
+            ? "/teacher"
+            : "/student";
+        return NextResponse.redirect(new URL(redirectPath, request.url));
+      }
+
+      // Проверки доступа на основе роли
       if (path.startsWith("/teacher") && role !== "teacher") {
         return NextResponse.redirect(
-          new URL(role === "admin" ? "/test" : "/student", request.url)
+          new URL(role === "admin" ? "/admin" : "/student", request.url)
         );
       }
 
-      if (path.startsWith("/test") && role !== "admin") {
+      if (path.startsWith("/admin") && role !== "admin") {
         return NextResponse.redirect(
           new URL(role === "teacher" ? "/teacher" : "/student", request.url)
         );
@@ -41,11 +53,11 @@ export async function middleware(request: NextRequest) {
 
       if (path.startsWith("/student") && role !== "student") {
         return NextResponse.redirect(
-          new URL(role === "teacher" ? "/teacher" : "/test", request.url)
+          new URL(role === "teacher" ? "/teacher" : "/admin", request.url)
         );
       }
 
-      // Admin доступ везде
+      // Admin имеет доступ везде, остальные роли проверены выше
       return NextResponse.next();
     } catch (err) {
       console.error("[Middleware] Token verification failed:", err);
@@ -59,11 +71,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/login",
-    "/student/:path*",
-    "/teacher/:path*",
-    "/admin/:path*",
-    "/test/:path*",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

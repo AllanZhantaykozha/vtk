@@ -1,4 +1,4 @@
-import { CreateGroupPage } from "@/src/pages/AdminPage/Create";
+import { CreateGroupPage } from "@/src/page/AdminPage/Create/CreateGroupPage";
 
 export default function Page() {
   return <CreateGroupPage />;

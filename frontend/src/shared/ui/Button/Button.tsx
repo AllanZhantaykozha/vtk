@@ -1,54 +1,55 @@
 import { cn } from "@/lib/utils";
 import { ArrowUpRight } from "lucide-react";
 import * as Icons from "lucide-react";
-import { ElementType } from "react";
+import { ElementType, ComponentPropsWithoutRef } from "react";
 
-export enum ButtonTypeEnum {
+export enum ButtonVariantEnum {
   BLUE = "blue",
   BLACK = "black",
   WHITE = "white",
   GRAY = "gray",
 }
 
-interface ButtonDto {
+interface ButtonProps extends ComponentPropsWithoutRef<"button"> {
   text?: string;
-  type: ButtonTypeEnum;
+  variant: ButtonVariantEnum;
   isLink?: boolean;
-  className?: string;
   icon?: string;
-  onClick?: () => Promise<void>;
-  disabled?: boolean;
+  className?: string;
 }
 
 export function Button({
   text,
-  type,
+  variant,
   isLink,
   className,
   icon,
-  onClick,
   disabled,
-}: ButtonDto) {
+  type = "button",
+  ...props
+}: ButtonProps) {
   const IconComponent = icon
     ? (Icons[icon as keyof typeof Icons] as ElementType)
     : null;
 
   return (
     <button
+      type={type}
       disabled={disabled}
-      onClick={onClick}
       className={cn(
-        "w-fit cursor-pointer py-2 px-4 text-center font-medium rounded-full flex items-center justify-center gap-2 transition",
-        type === ButtonTypeEnum.BLACK
-          ? "bg-[#303443] text-white"
-          : type === ButtonTypeEnum.WHITE
-          ? "text-[#303443] bg-white"
-          : type === ButtonTypeEnum.BLUE
-          ? "bg-[#589cff] text-white"
-          : "bg-[#dae1ef]",
+        "w-fit cursor-pointer py-2 px-4 text-center font-medium rounded-full flex items-center justify-center gap-2 transition-all duration-200 ",
+        variant === ButtonVariantEnum.BLACK
+          ? "bg-[#303443] text-white hover:bg-[#242a3a]"
+          : variant === ButtonVariantEnum.WHITE
+          ? "text-[#303443] bg-white hover:bg-gray-50 "
+          : variant === ButtonVariantEnum.BLUE
+          ? "bg-[#589cff] text-white hover:bg-[#4682ff]"
+          : "bg-[#dae1ef] text-gray-700 hover:bg-[#c7d2e2]",
         isLink && "aspect-square rounded-full !p-3",
+        disabled && "opacity-50 cursor-not-allowed",
         className
       )}
+      {...props}
     >
       {!text && isLink ? (
         <ArrowUpRight size={28} />

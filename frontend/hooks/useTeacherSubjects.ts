@@ -1,5 +1,5 @@
-import { Subject } from "@/components/types/subject.type";
 import { ROUTES } from "@/lib/routes";
+import { Subject } from "@/src/entities/Subject/types";
 import { useState, useEffect } from "react";
 
 export function useTeacherSubjects() {

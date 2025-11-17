@@ -29,15 +29,17 @@ model Teacher {
   user     User             @relation("UserToTeacher", fields: [userId], references: [id], onDelete: Cascade)
   subjects TeacherSubject[] @relation("TeacherSubjects")
   tests    Test[]           @relation("TeacherTests")
+  tasks    Task[]           @relation("TeacherTasks")
 }
 
 model Student {
-  id          Int              @id @default(autoincrement())
-  userId      Int              @unique
-  groupId     Int?
-  group       Group?           @relation("GroupStudents", fields: [groupId], references: [id])
-  user        User             @relation("UserToStudent", fields: [userId], references: [id], onDelete: Cascade)
-  submissions TestSubmission[] @relation("StudentSubmissions")
+  id              Int              @id @default(autoincrement())
+  userId          Int              @unique
+  groupId         Int?
+  group           Group?           @relation("GroupStudents", fields: [groupId], references: [id])
+  user            User             @relation("UserToStudent", fields: [userId], references: [id], onDelete: Cascade)
+  submissions     TestSubmission[] @relation("StudentSubmissions")
+  taskSubmissions TaskSubmission[] @relation("StudentTaskSubmissions")
 }
 
 model Admin {
@@ -53,6 +55,7 @@ model Subject {
   lectures Lecture[]        @relation("LectureSubject")
   teachers TeacherSubject[] @relation("TeacherSubjects")
   tests    Test[]           @relation("TestSubject")
+  tasks    Task[]           @relation("TaskSubject")
 
   @@index([name])
 }
@@ -92,6 +95,7 @@ model Test {
   description String?
   subjectId   Int
   teacherId   Int
+  deadline    DateTime
   uploadDate  DateTime         @default(now())
   questions   Question[]       @relation("TestQuestions")
   subject     Subject          @relation("TestSubject", fields: [subjectId], references: [id], onDelete: Cascade)
@@ -135,6 +139,37 @@ model TestSubmission {
   test        Test                 @relation("TestSubmissions", fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([testId, studentId])
+}
+
+model Task {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String
+  subjectId   Int
+  teacherId   Int
+  uploadDate  DateTime         @default(now())
+  deadline    DateTime
+  fileContent Bytes?
+  subject     Subject          @relation("TaskSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher     Teacher          @relation("TeacherTasks", fields: [teacherId], references: [id], onDelete: Cascade)
+  submissions TaskSubmission[] @relation("TaskSubmissions")
+
+  @@index([subjectId, teacherId])
+}
+
+model TaskSubmission {
+  id          Int                  @id @default(autoincrement())
+  taskId      Int
+  studentId   Int
+  text        String?
+  fileContent Bytes?
+  score       Int?
+  submittedAt DateTime             @default(now())
+  status      TestSubmissionStatus @default(PENDING)
+  student     Student              @relation("StudentTaskSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  task        Task                 @relation("TaskSubmissions", fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, studentId])
 }
 
 model Lecture {

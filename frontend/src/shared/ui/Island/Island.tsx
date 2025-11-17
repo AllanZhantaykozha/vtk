@@ -57,12 +57,12 @@ export function IslandHeader({
     <div
       className={`${cn(
         className
-      )}p-2 grid grid-cols-[auto_auto_1fr] gap-5 items-center`}
+      )}p-2 grid grid-cols-[auto_1fr] lg:grid-cols-[auto_auto_1fr] gap-5 items-center`}
     >
       {Array.isArray(children) && (
         <>
           {children[0]}
-          {children[1]}
+          <div className="hidden lg:block">{children[1]}</div>
           <div className="justify-self-end">{children[2]}</div>
         </>
       )}

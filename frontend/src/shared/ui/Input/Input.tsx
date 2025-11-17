@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import styles from "./Input.module.scss";
 
 interface InputDto extends React.InputHTMLAttributes<HTMLInputElement> {
   type: InputTypeEnum;
@@ -29,6 +28,7 @@ export enum InputTypeEnum {
   HIDDEN = "hidden",
   RANGE = "range",
   SEARCH = "search",
+  TEXTAREA = "textarea",
 }
 
 export function Input(data: InputDto) {

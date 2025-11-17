@@ -11,7 +11,7 @@ import { useSubjectStore } from "@/src/shared/lib/stores/subjectsStore";
 export function CreateSubjectIsland() {
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const { subjects, isLoadingSubject, fetchSubject } = useSubjectStore();
+  const { isLoadingSubject, fetchSubject } = useSubjectStore();
   const { createSubject } = useSubjectStore();
   const [updateId, setUpdateId] = useState<number>(0);
 
@@ -52,8 +52,6 @@ export function CreateSubjectIsland() {
 
   const handleCancel = () => {
     setIsEditMode(false);
-
-    toast.success("Группа изменена");
 
     setInitialEditData({
       name: "",

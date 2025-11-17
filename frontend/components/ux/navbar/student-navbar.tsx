@@ -15,8 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge"; // Assuming Badge is available from shadcn/ui
 import { CheckCircle, AlertCircle, MessageCircle, Info } from "lucide-react"; // Assuming Lucide icons are installed
 import { useApi } from "@/hooks/useApi";
-import { Subject } from "@/components/types/subject.type";
 import { ListItem } from "../ListItem";
+import { Subject } from "@/src/entities/Subject/types";
 
 // Define Notification type from backend
 type BackendNotification = {

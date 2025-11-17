@@ -19,9 +19,9 @@ export const ROUTES = {
   lectures: {
     create: { path: `/lectures`, method: "POST" },
     getAll: { path: `/lectures`, method: "GET" },
-    getById: { path: `/lectures/{id}`, method: "GET" },
-    update: { path: `/lectures/{id}`, method: "PATCH" },
-    delete: { path: `/lectures/{id}`, method: "DELETE" },
+    getById: { path: `/lectures/`, method: "GET" },
+    update: { path: `/lectures/`, method: "PATCH" },
+    delete: { path: `/lectures/`, method: "DELETE" },
   },
   tests: {
     create: { path: `/tests`, method: "POST" },
@@ -32,6 +32,14 @@ export const ROUTES = {
     getMyTests: { path: `/tests/my-tests`, method: "GET" },
     submit: { path: `/tests/{id}/submit`, method: "POST" },
     check: { path: `/tests/submissions/{id}/check`, method: "POST" },
+  },
+  tasks: {
+    create: { path: `/tasks`, method: "POST" },
+    getAll: { path: `/tasks`, method: "GET" },
+    getById: { path: `/tasks/`, method: "GET" },
+    update: { path: `/tasks/`, method: "PATCH" },
+    delete: { path: `/tasks/`, method: "DELETE" },
+    submit: { path: `/tasks/submit`, method: "POST" },
   },
   groups: {
     addSubject: { path: `/groups/subjects`, method: "POST" },

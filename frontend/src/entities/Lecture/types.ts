@@ -1,5 +1,5 @@
 import { Subject } from "../Subject/types";
-import { Teacher } from "../User/types/types";
+import { Teacher } from "../User/types";
 
 export interface Lecture {
   id: number;

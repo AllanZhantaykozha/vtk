@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { CreateListSkeleton } from "../Skeleton";
 import { Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { SubjectFormData, UserFormData } from "../CreateForm";
+import { SubjectFormData } from "../CreateForm";
 import { Subject } from "@/src/entities/Subject/types";
 import { useSubjectStore } from "@/src/shared/lib/stores/subjectsStore";
+import { Group } from "@/src/entities/Group/types";
 
 export function CreateSubjectList({
   onClickEdit,
@@ -64,9 +65,9 @@ export function CreateSubjectList({
                   {obj.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {obj.groups?.map((obj) => (
-                    <div key={obj.group.id} className="">
-                      {obj.group.name}
+                  {obj.groups?.map((obj: Group) => (
+                    <div key={obj.id} className="">
+                      {obj.name}
                     </div>
                   ))}
                 </td>

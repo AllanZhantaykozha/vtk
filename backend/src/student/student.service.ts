@@ -41,4 +41,61 @@ export class StudentService {
       },
     });
   }
+
+  async getAllStudents(filters?: {
+    id?: number;
+    login?: string;
+    fullName?: string;
+    groupId?: number;
+    sortBy?: string;
+    order?: 'asc' | 'desc';
+  }) {
+    const where: any = {};
+
+    if (filters?.groupId) where.group = { id: Number(filters.groupId) };
+    if (filters?.id) where.user = { id: Number(filters.id) };
+    if (filters?.login)
+      where.user = {
+        ...where.user,
+        login: { contains: filters.login, mode: 'insensitive' },
+      };
+    if (filters?.fullName)
+      where.user = {
+        ...where.user,
+        fullName: { contains: filters.fullName, mode: 'insensitive' },
+      };
+
+    const validSortFields = ['id', 'fullName', 'login'] as const;
+    const sortField = validSortFields.includes(filters?.sortBy as any)
+      ? (filters!.sortBy as (typeof validSortFields)[number])
+      : 'id';
+
+    const sortOrder: 'asc' | 'desc' = filters?.order ?? 'desc';
+
+    // сортировка по вложенным полям
+    const orderBy =
+      sortField === 'fullName' || sortField === 'login'
+        ? { user: { [sortField]: sortOrder } }
+        : { [sortField]: sortOrder };
+
+    return await this.prisma.student.findMany({
+      where,
+      select: {
+        id: true,
+        group: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            login: true,
+          },
+        },
+      },
+      orderBy,
+    });
+  }
 }

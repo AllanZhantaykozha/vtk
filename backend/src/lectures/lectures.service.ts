@@ -109,9 +109,7 @@ export class LecturesService {
 
     const where: Prisma.LectureWhereInput = {};
 
-    if (subjectId) {
-      where.subjectId = subjectId;
-    }
+    // Фильтры по названию, датам и предмету
     if (filters.title) {
       where.title = { contains: filters.title, mode: 'insensitive' };
     }
@@ -124,8 +122,13 @@ export class LecturesService {
         where.uploadDate.lte = new Date(filters.endDate);
       }
     }
+    if (subjectId) {
+      where.subjectId = subjectId;
+    }
 
+    // === Роли и ограничения доступа ===
     if (user.role === 'student') {
+      // Студент: только предметы из его группы
       const student = await this.prisma.student.findUnique({
         where: { userId: user.userId },
         include: {
@@ -138,10 +141,20 @@ export class LecturesService {
         );
       }
       where.subjectId = { in: student.group.subjects.map((s) => s.subjectId) };
-    } else if (user.role !== 'teacher' && user.role !== 'admin') {
+    } else if (user.role === 'teacher') {
+      // Преподаватель: ТОЛЬКО СВОИ лекции
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { userId: user.userId },
+      });
+      if (!teacher) {
+        throw new ForbiddenException('Teacher profile not found');
+      }
+      where.teacherId = teacher.id; // Ключевое ограничение
+    } else if (user.role !== 'admin') {
       throw new ForbiddenException('Unauthorized access');
     }
 
+    // === Запрос ===
     return this.prisma.lecture.findMany({
       where,
       select: {

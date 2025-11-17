@@ -1,17 +1,11 @@
 "use client";
 
 import { useAuthStore } from "@/src/shared/lib/stores";
-import { Button } from "@/src/shared/ui/Button";
-import { ButtonTypeEnum } from "@/src/shared/ui/Button/Button";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 import { HeaderSkeleton } from "./Skeleton";
-
-interface HeaderDto {
-  fullName: string;
-  imageUrl: string;
-}
+import { useSidebarStore } from "@/src/shared/lib/stores/sidebarStore";
 
 function shortFullname(fullName: string) {
   const shortName = fullName.trim().split(" ");
@@ -25,6 +19,7 @@ function shortFullname(fullName: string) {
 
 export function Header() {
   const { user, isAuthenticated, isLoading, fetchMe, logout } = useAuthStore();
+  const { openSidebar } = useSidebarStore();
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -36,7 +31,14 @@ export function Header() {
 
   return (
     <div className="w-full h-fit px-3 py-2 flex justify-between items-center">
-      <div className="font-bold text-4xl">{user?.fullName}</div>
+      <div className="font-bold text-4xl flex items-center gap-5">
+        <Menu
+          size={32}
+          className="block lg:hidden cursor-pointer"
+          onClick={() => openSidebar()}
+        />
+        <div className="sm:block hidden">{user?.fullName}</div>
+      </div>
       <div className="flex gap-10 items-center">
         <div className="flex items-center gap-3">
           <Image

@@ -1,6 +1,6 @@
 import { ROUTES } from "@/lib/routes";
 import { Subject } from "../types";
-import { API } from "@/src/app/api/client";
+import { API } from "@/src/apps/api/client";
 
 export async function getAllSubjects(): Promise<Subject[] | string> {
   try {

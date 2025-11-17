@@ -19,8 +19,22 @@ export class TeacherController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('/get-all-teachers')
-  getAllTeachers(@Request() req) {
-    return this.teacherService.getAllTeachers(req.user);
+  getAllTeachers(
+    @Query('id') id?: number,
+    @Query('login') login?: string,
+    @Query('fullName') fullName?: string,
+    @Query('subjectsId') subjectsId?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('order') order?: 'asc' | 'desc',
+  ) {
+    return this.teacherService.getAllTeachers({
+      id: id ? Number(id) : undefined,
+      login,
+      fullName,
+      subjectsId,
+      sortBy,
+      order,
+    });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

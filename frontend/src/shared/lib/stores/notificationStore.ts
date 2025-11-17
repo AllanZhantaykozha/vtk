@@ -4,6 +4,7 @@ import {
   getNotifications,
   updateNotification,
 } from "@/src/entities/Notification/api";
+import { NotificationParams } from "@/src/entities/Notification/api/queries";
 import { AppNotification } from "@/src/entities/Notification/types";
 import { NotificationFormData } from "@/src/widgets/CreatePage/CreateForm";
 import { create } from "zustand";
@@ -13,11 +14,11 @@ interface NotificationState {
   notifications: AppNotification[] | null;
   isLoadingNotification: boolean;
 
-  fetchNotifications: () => Promise<void>;
+  fetchNotifications: (filters?: NotificationParams) => Promise<void>;
   createNotification: (notificationData: NotificationFormData) => Promise<void>;
   updateNotification: (
     id: number,
-    notificationData: Partial<Notification>
+    notificationData: Partial<NotificationFormData>
   ) => Promise<void>;
   deleteNotification: (id: number) => Promise<void>;
 }
@@ -26,39 +27,39 @@ export const useNotificationStore = create<NotificationState>()(
   persist(
     devtools(
       (set, get) => ({
-        statistics: null,
-        isLoading: false,
+        notifications: null,
+        isLoadingNotification: false,
 
-        fetchNotifications: async () => {
+        fetchNotifications: async (filters?: NotificationParams) => {
           const { isLoadingNotification } = get();
           if (isLoadingNotification) return;
 
           set({ isLoadingNotification: true });
 
           try {
-            const data = await getNotifications();
+            const data = await getNotifications(filters);
             if (typeof data === "string") {
-              console.error("Statistic fetch error:", data);
+              console.error("Notification fetch error:", data);
               set({ notifications: null });
             } else {
               set({ notifications: data });
             }
           } catch (error) {
-            console.error("Error in fetchStatistic:", error);
+            console.error("Error in fetchNotifications:", error);
             set({ notifications: null });
           } finally {
             set({ isLoadingNotification: false });
           }
         },
 
-        createNotification: async (NotificationData: NotificationFormData) => {
+        createNotification: async (notificationData: NotificationFormData) => {
           const { isLoadingNotification } = get();
           if (isLoadingNotification) return;
 
           set({ isLoadingNotification: true });
 
           try {
-            const result = await createNotification(NotificationData);
+            const result = await createNotification(notificationData);
             if (typeof result === "string") {
               console.error("Create Notification error:", result);
               return;
@@ -73,7 +74,7 @@ export const useNotificationStore = create<NotificationState>()(
 
         updateNotification: async (
           id: number,
-          NotificationData: Partial<NotificationFormData>
+          notificationData: Partial<NotificationFormData>
         ) => {
           const { isLoadingNotification } = get();
           if (isLoadingNotification) return;
@@ -81,14 +82,14 @@ export const useNotificationStore = create<NotificationState>()(
           set({ isLoadingNotification: true });
 
           try {
-            const result = await updateNotification(id, NotificationData);
+            const result = await updateNotification(id, notificationData);
             if (typeof result === "string") {
               console.error("Update Notification error:", result);
               return;
             }
             await get().fetchNotifications();
           } catch (error) {
-            console.error("Error in update Notification:", error);
+            console.error("Error in updateNotification:", error);
           } finally {
             set({ isLoadingNotification: false });
           }
@@ -108,7 +109,7 @@ export const useNotificationStore = create<NotificationState>()(
             }
             await get().fetchNotifications();
           } catch (error) {
-            console.error("Error in delete Notification:", error);
+            console.error("Error in deleteNotification:", error);
           } finally {
             set({ isLoadingNotification: false });
           }
@@ -118,7 +119,7 @@ export const useNotificationStore = create<NotificationState>()(
     ),
     {
       name: "notifications-storage",
-      partialize: (state) => ({ statistics: state.notifications }),
+      partialize: (state) => ({ notifications: state.notifications }),
     }
   )
 );

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { CreateListSkeleton } from "../Skeleton";
 import { Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { GroupFormData, UserFormData } from "../CreateForm";
+import { GroupFormData } from "../CreateForm";
 import { Group } from "@/src/entities/Group/types";
 import { useGroupStore } from "@/src/shared/lib/stores";
 
@@ -13,14 +13,14 @@ export function CreateGroupList({
 }: {
   onClickEdit: (id: number, group: GroupFormData) => void;
 }) {
-  const { groups, isLoadingGroup, fetchGroups } = useGroupStore();
+  const { groups, isLoadingGroup, fetchAllGroups } = useGroupStore();
   const { deleteGroup } = useGroupStore();
 
   const handleDelete = async (groupId: number) => {
     try {
       await deleteGroup(groupId);
       toast.success("Группа удален");
-      fetchGroups();
+      fetchAllGroups();
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Ошибка удаления группы");

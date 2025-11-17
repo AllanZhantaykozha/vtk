@@ -1,5 +1,5 @@
-import { API } from "@/src/app/api/client";
-import { ROUTES } from "@/src/app/api/routes";
+import { API } from "@/src/apps/api/client";
+import { ROUTES } from "@/src/apps/api/routes";
 import { NotificationFormData } from "@/src/widgets/CreatePage/CreateForm";
 import { AppNotification } from "../types";
 

@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { Group } from "@/src/entities/Group/types";
 import { Subject } from "@/src/entities/Subject/types";
 import { Button } from "@/src/shared/ui/Button";
-import { ButtonTypeEnum } from "@/src/shared/ui/Button/Button";
+import { ButtonVariantEnum } from "@/src/shared/ui/Button/Button";
 import { Select } from "@/src/shared/ui/Select";
 import { Eye, EyeClosed } from "lucide-react";
 import { User } from "@/src/entities/User/types";
@@ -120,19 +120,16 @@ export function UserForm({
               name="role"
               control={control}
               render={({ field }) => (
-                <select
-                  value={mapTypeToId(field.value) ?? ""}
-                  onChange={(e) =>
-                    field.onChange(mapIdToType(Number(e.target.value)))
+                <Select
+                  data={userTypes}
+                  selectedId={
+                    field.value ? mapTypeToId(field.value) : undefined
                   }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {userTypes.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) =>
+                    field.onChange(id ? mapIdToType(id) : undefined)
+                  }
+                  className="w-full"
+                />
               )}
             />
             {errors.role && (
@@ -140,7 +137,6 @@ export function UserForm({
             )}
           </div>
 
-          {/* Логин */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Логин
@@ -259,15 +255,17 @@ export function UserForm({
 
           <div className="flex gap-2">
             <Button
-              type={ButtonTypeEnum.BLUE}
+              variant={ButtonVariantEnum.BLUE}
               text={isEdit ? "Сохранить" : "Добавить"}
               disabled={loading}
+              type="submit"
             />
             {onCancel && (
               <Button
                 onClick={async () => onCancel()}
-                type={ButtonTypeEnum.GRAY}
+                variant={ButtonVariantEnum.GRAY}
                 text="Отмена"
+                type="submit"
               />
             )}
           </div>
@@ -374,14 +372,16 @@ export function GroupForm({
 
           <div className="flex gap-2">
             <Button
-              type={ButtonTypeEnum.BLUE}
+              type="submit"
+              variant={ButtonVariantEnum.BLUE}
               text={isEdit ? "Сохранить" : "Добавить"}
               disabled={loading}
             />
             {onCancel && (
               <Button
+                type="submit"
                 onClick={async () => onCancel()}
-                type={ButtonTypeEnum.GRAY}
+                variant={ButtonVariantEnum.GRAY}
                 text="Отмена"
               />
             )}
@@ -452,15 +452,17 @@ export function SubjectForm({
 
           <div className="flex gap-2">
             <Button
-              type={ButtonTypeEnum.BLUE}
+              variant={ButtonVariantEnum.BLUE}
               text={isEdit ? "Сохранить" : "Добавить"}
               disabled={loading}
+              type="submit"
             />
             {onCancel && (
               <Button
                 onClick={async () => onCancel()}
-                type={ButtonTypeEnum.GRAY}
+                variant={ButtonVariantEnum.GRAY}
                 text="Отмена"
+                type="submit"
               />
             )}
           </div>
@@ -482,7 +484,6 @@ const NotificationFormSchema = z.object({
 export type NotificationFormData = z.infer<typeof NotificationFormSchema>;
 
 interface NotificationFormProps {
-  // Список опций для выбора получателей (например, пользователи)
   userIds?: User[];
   onSubmit: (
     data: NotificationFormData,
@@ -623,14 +624,16 @@ export function NotificationForm({
 
           <div className="flex gap-2">
             <Button
-              type={ButtonTypeEnum.BLUE}
+              variant={ButtonVariantEnum.BLUE}
               text={isEdit ? "Сохранить" : "Добавить"}
               disabled={loading}
+              type="submit"
             />
             {onCancel && (
               <Button
+                type="submit"
                 onClick={async () => onCancel()}
-                type={ButtonTypeEnum.GRAY}
+                variant={ButtonVariantEnum.GRAY}
                 text="Отмена"
               />
             )}

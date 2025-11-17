@@ -1,4 +1,4 @@
-import { TestsPage } from "@/src/pages/AdminPage";
+import { TestsPage } from "@/src/page/AdminPage";
 
 export default function Page() {
   return <TestsPage />;

@@ -29,7 +29,6 @@ export class TestsController {
 
   @Get('getStatistic')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('teacher', 'admin')
   async getStatistic(@Request() req, @Query('groupId') groupId?: string) {
     let parsedGroupId: number | undefined;
     if (groupId) {
@@ -74,17 +73,17 @@ export class TestsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
   async update(
-    @Body() UpdateTestDto: UpdateTestDto,
+    @Body() updateTestDto: UpdateTestDto,
     @Request() req,
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.testsService.updateTest(id, UpdateTestDto, req.user);
+    return this.testsService.updateTest(id, updateTestDto, req.user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
-  async delete(@Request() req, @Param('id') id: number) {
+  async delete(@Request() req, @Param('id', ParseIntPipe) id: number) {
     return this.testsService.deleteTest(id, req.user);
   }
 
@@ -112,7 +111,7 @@ export class TestsController {
     return this.testsService.getTestById(id, req.user);
   }
 
-  @Post(':id/submit')
+  @Post('submit/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
   async submitTest(
@@ -135,29 +134,31 @@ export class TestsController {
   }
 }
 
+// Пример создания теста с deadline:
 // {
 //   "title": "Mathematics Test 1",
 //   "description": "Basic algebra test",
 //   "subjectId": 1,
+//   "deadline": "2025-11-15T23:59:59Z",
 //   "questions": [
 //     {
 //       "text": "What is 2 + 2?",
 //       "type": "single",
 //       "correct": [1],
 //       "options": [
-//         { "id": 1, "text": "4" },
-//         { "id": 2, "text": "22" },
-//         { "id": 3, "text": "5" }
+//         { "text": "4" },
+//         { "text": "22" },
+//         { "text": "5" }
 //       ]
 //     },
 //     {
 //       "text": "Select all even numbers",
 //       "type": "multiple",
-//       "correct": [1, 3],
+//       "correct": [0, 2],
 //       "options": [
-//         { "id": 1, "text": "2" },
-//         { "id": 2, "text": "3" },
-//         { "id": 3, "text": "4" }
+//         { "text": "2" },
+//         { "text": "3" },
+//         { "text": "4" }
 //       ]
 //     }
 //   ]

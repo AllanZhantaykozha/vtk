@@ -12,7 +12,7 @@ import { updateGroup } from "@/src/entities/Group/api";
 export function CreateGroupIsland() {
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const { isLoadingGroup, fetchGroups } = useGroupStore();
+  const { isLoadingGroup, fetchAllGroups } = useGroupStore();
   const { subjects, isLoadingSubject, fetchSubject } = useSubjectStore();
   const { createGroup } = useGroupStore();
   const [updateId, setUpdateId] = useState<number>(0);
@@ -29,7 +29,7 @@ export function CreateGroupIsland() {
   };
 
   useEffect(() => {
-    fetchGroups();
+    fetchAllGroups();
     fetchSubject();
   }, []);
 
@@ -40,13 +40,13 @@ export function CreateGroupIsland() {
     if (type === "CREATE") {
       await createGroup(newGroup);
       toast.success("Группа создан");
-      fetchGroups();
+      fetchAllGroups();
     }
 
     if (type === "UPDATE") {
       await updateGroup(updateId, newGroup);
       toast.success("Группа изменена");
-      fetchGroups();
+      fetchAllGroups();
     }
 
     setInitialEditData({
@@ -57,8 +57,6 @@ export function CreateGroupIsland() {
 
   const handleCancel = () => {
     setIsEditMode(false);
-
-    toast.success("Группа изменена");
 
     setInitialEditData({
       name: "",

@@ -13,7 +13,7 @@ import { updateUser } from "@/src/entities/User/api/mutations";
 export function CreateUserIsland() {
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const { groups, isLoadingGroup, fetchGroups } = useGroupStore();
+  const { groups, isLoadingGroup, fetchAllGroups } = useGroupStore();
   const { subjects, isLoadingSubject, fetchSubject } = useSubjectStore();
   const { createUser, fetchUsers } = useUsersStore();
 
@@ -35,7 +35,7 @@ export function CreateUserIsland() {
   };
 
   useEffect(() => {
-    fetchGroups();
+    fetchAllGroups();
     fetchSubject();
   }, []);
 

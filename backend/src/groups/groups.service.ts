@@ -147,7 +147,7 @@ export class GroupsService {
           },
         },
       },
-      include: { subjects: { include: { subject: true } } },
+      include: { subjects: { include: { subject: true } }, students: true },
       orderBy: { name: 'asc' },
     });
   }

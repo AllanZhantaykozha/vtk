@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { NotificationFormData } from "../CreateForm";
 import { useNotificationStore } from "@/src/shared/lib/stores";
 import { AppNotification } from "@/src/entities/Notification/types";
+import { User } from "@/src/entities/User/types";
 
 export function CreateNotificationList({
   onClickEdit,
@@ -76,7 +77,7 @@ export function CreateNotificationList({
                   {(() => {
                     const roles: Set<"Админ" | "Преподаватель" | "Студент"> =
                       new Set(
-                        obj.users.map((u: any) =>
+                        obj.users.map((u: User) =>
                           u.admin
                             ? "Админ"
                             : u.student

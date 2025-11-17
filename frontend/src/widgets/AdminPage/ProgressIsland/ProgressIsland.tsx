@@ -1,4 +1,3 @@
-import { Button, ButtonTypeEnum } from "@/src/shared/ui/Button/Button";
 import { Icon, IconThemeEnum } from "@/src/shared/ui/Icon/Icon";
 import { Island } from "@/src/shared/ui/Island";
 import {
@@ -16,14 +15,14 @@ import { ProgressCartSkeleton } from "./Skeleton";
 
 export function ProgressIsland() {
   const { statistics, isLoading, fetchStatistic } = useStatisticStore();
-  const { groups, isLoadingGroup, fetchGroups } = useGroupStore();
+  const { groups, isLoadingGroup, fetchAllGroups } = useGroupStore();
   const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(
     undefined
   );
 
   useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+    fetchAllGroups();
+  }, [fetchAllGroups]);
 
   useEffect(() => {
     fetchStatistic(
@@ -44,7 +43,7 @@ export function ProgressIsland() {
         />
       </IslandHeader>
       <IslandContent className="grid grid-flow-col gap-5">
-        <div className="overflow-x-auto custom-scroll pb-2">
+        <div className="overflow-x-auto custom-scroll">
           <div
             className="
               flex gap-5 

@@ -11,11 +11,10 @@ import { useUsersStore } from "@/src/shared/lib/stores/usersStore";
 export function CreateNotificationIsland() {
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const { notifications, isLoadingNotification, fetchNotifications } =
-    useNotificationStore();
+  const { isLoadingNotification, fetchNotifications } = useNotificationStore();
   const { createNotification, updateNotification } = useNotificationStore();
   const [updateId, setUpdateId] = useState<number>(0);
-  const { users, fetchUsers } = useUsersStore();
+  const { users } = useUsersStore();
 
   const [initialEditData, setInitialEditData] = useState<NotificationFormData>({
     text: "",

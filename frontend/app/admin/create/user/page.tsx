@@ -1,4 +1,4 @@
-import { CreateUserPage } from "@/src/pages/AdminPage/Create";
+import { CreateUserPage } from "@/src/page/AdminPage/Create/CreateUserPage";
 
 export default function Page() {
   return <CreateUserPage />;

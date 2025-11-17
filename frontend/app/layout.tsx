@@ -3,9 +3,7 @@ import { Mulish } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 
-const font = Mulish({
-  subsets: ["latin", "cyrillic"],
-});
+const font = Mulish();
 
 export const metadata: Metadata = {
   title: "Втк",

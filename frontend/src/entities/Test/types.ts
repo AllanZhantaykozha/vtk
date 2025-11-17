@@ -1,6 +1,6 @@
-import { TestSubmissionStatus } from "@/components/types/test.type";
 import { Subject } from "../Subject/types";
 import { Teacher, Student } from "../User/types";
+import { TestSubmissionStatus } from "../User/types/types";
 
 export interface Test {
   id: number;
@@ -8,11 +8,15 @@ export interface Test {
   description?: string;
   subjectId: number;
   subject: Subject;
+  deadline: Date;
   teacherId: number;
   teacher: Teacher;
   uploadDate: Date;
   questions: Question[];
   submissions: TestSubmission[];
+  timeRemaining: number;
+  isExpired: boolean;
+  status?: string;
 }
 
 export interface Question {

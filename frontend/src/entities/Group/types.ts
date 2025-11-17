@@ -1,5 +1,5 @@
 import { Subject } from "../Subject/types";
-import { Student } from "../User/types/types";
+import { Student } from "../User/types";
 
 export interface Group {
   id: number;

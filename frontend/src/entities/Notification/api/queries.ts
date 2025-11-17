@@ -1,11 +1,29 @@
-import { API } from "@/src/app/api/client";
-import { ROUTES } from "@/src/app/api/routes";
+import { API } from "@/src/apps/api/client";
+import { ROUTES } from "@/src/apps/api/routes";
 import { AppNotification } from "../types";
 
-export async function getNotifications(): Promise<AppNotification[] | string> {
+export interface NotificationParams {
+  status?: string;
+  text?: string;
+  id?: string;
+  userType?: "teacher" | "admin" | "student" | "all";
+  userId?: string;
+  sortBy?: string;
+  order?: "asc" | "desc";
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export async function getNotifications(
+  filters?: NotificationParams
+): Promise<AppNotification[] | string> {
   try {
+    const queryString = filters
+      ? "?" + new URLSearchParams(filters as Record<string, string>).toString()
+      : "";
+
     const response = await API<AppNotification[]>({
-      url: ROUTES.notification.getNotification.path,
+      url: ROUTES.notification.getNotification.path + queryString,
       method: ROUTES.notification.getNotification.method,
     });
 

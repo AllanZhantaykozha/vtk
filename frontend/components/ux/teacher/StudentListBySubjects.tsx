@@ -1,24 +1,9 @@
 "use client";
 
-import { RawSubject } from "@/components/types/user.type";
+import { Group } from "@/src/entities/Group/types";
+import { Subject } from "@/src/entities/Subject/types";
+import { Student } from "@/src/entities/User/types";
 import React, { useEffect, useState } from "react";
-
-interface Student {
-  id: number;
-  fullName: string;
-}
-
-interface Group {
-  id: number;
-  name: string;
-  students: Student[];
-}
-
-interface Subject {
-  id: number;
-  name: string;
-  groups: Group[];
-}
 
 export default function StudentListBySubjects() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -41,13 +26,13 @@ export default function StudentListBySubjects() {
       const rawData = await res.json();
 
       // Трансформация
-      const data: Subject[] = rawData.map((subject: RawSubject) => ({
+      const data: Subject[] = rawData.map((subject: Subject) => ({
         id: subject.id,
         name: subject.name,
-        groups: subject.groups.map((g) => ({
-          id: g.group.id,
-          name: g.group.name,
-          students: g.group.students.map((s) => ({
+        groups: subject.groups.map((g: Group) => ({
+          id: g.id,
+          name: g.name,
+          students: g.students.map((s) => ({
             id: s.id,
             fullName: s.user.fullName,
           })),
@@ -75,14 +60,14 @@ export default function StudentListBySubjects() {
       {subjects.length === 0 ? (
         <p>Нет данных</p>
       ) : (
-        subjects.map((subject) => (
+        subjects.map((subject: Subject) => (
           <div key={subject.id} className="border rounded-lg p-4 shadow-sm">
             <h2 className="text-lg font-bold mb-3">{subject.name}</h2>
 
             {subject.groups.length === 0 ? (
               <p className="text-gray-500">Нет групп</p>
             ) : (
-              subject.groups.map((group) => (
+              subject.groups.map((group: Group) => (
                 <div key={group.id} className="mb-4">
                   <h3 className="text-md font-semibold mb-2">{group.name}</h3>
 
@@ -90,9 +75,9 @@ export default function StudentListBySubjects() {
                     <p className="text-gray-400 text-sm">Нет студентов</p>
                   ) : (
                     <ul className="list-disc list-inside space-y-1">
-                      {group.students.map((student) => (
+                      {group.students.map((student: Student) => (
                         <li key={student.id} className="text-sm">
-                          {student.fullName}
+                          {student.user.fullName}
                         </li>
                       ))}
                     </ul>
